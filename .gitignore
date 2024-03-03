@@ -185,5 +185,6 @@ fabric.properties
 .idea
 
 data_folder
-.yaml
+
 *.cfg
+config.yaml
