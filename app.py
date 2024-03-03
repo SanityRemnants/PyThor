@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, Response
 import copernicusmarine
 from datetime import datetime
 
@@ -22,8 +22,11 @@ def root():  # put application's code here
     latitude_end = request.args.get('latitude_end')
     logitude_start = request.args.get('logitude_start')
     logitude_end = request.args.get('logitude_end')
-    time_start = datetime.fromtimestamp(int(request.args.get('time_start'))).date()
-    time_end = datetime.fromtimestamp(int(request.args.get('time_end'))).date()
+    if latitude_end and latitude_start and logitude_end and logitude_end:
+        time_start = datetime.fromtimestamp(int(request.args.get('time_start'))).date()
+        time_end = datetime.fromtimestamp(int(request.args.get('time_end'))).date()
+    else:
+        return Response(status=400)
 
     # Set parameters
     data_request = {
@@ -45,7 +48,7 @@ def root():  # put application's code here
         end_datetime=data_request["time"][1],
         variables=data_request["variables"], username=USERNAME, password=PASSWORD
     )
-    return sst_l3s.to_dict()
+    return Response(sst_l3s.to_dict(),status=200)
 
 
 if __name__ == '__main__':
