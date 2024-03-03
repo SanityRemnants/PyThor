@@ -1,9 +1,10 @@
+from asyncio import sleep
+
 from flask import Flask, request, Response
 import copernicusmarine
 from datetime import datetime
 
 import yaml
-
 USERNAME = ""
 PASSWORD = ""
 with open("config.yaml", "r") as f:
@@ -12,7 +13,6 @@ with open("config.yaml", "r") as f:
     PASSWORD = config["coppernicus_acount"]["password"]
 
 # Import modules
-
 app = Flask(__name__)
 
 
@@ -46,10 +46,11 @@ def root():  # put application's code here
         maximum_latitude=data_request["latitude"][1],
         start_datetime=data_request["time"][0],
         end_datetime=data_request["time"][1],
-        variables=data_request["variables"], username=USERNAME, password=PASSWORD
-    )
-    return Response(sst_l3s.to_dict(),status=200)
+        variables=data_request["variables"], username=USERNAME, password=PASSWORD)
+    return sst_l3s.to_dict()
 
 
 if __name__ == '__main__':
+    sst_l3s = copernicusmarine.open_dataset(dataset_id= "cmems_obs-sst_atl_phy_nrt_l3s_P1D-m", username=USERNAME, password=PASSWORD)
+    # Print loaded dataset information
     app.run()
