@@ -1,10 +1,17 @@
+from flask import Flask, request
+import copernicusmarine
 from datetime import datetime
 
-USERNAME = "kdrozd"
-PASSWORD = "Death5142"
+import yaml
+
+USERNAME = ""
+PASSWORD = ""
+with open("config.yaml", "r") as f:
+    config = yaml.safe_load(f)
+    USERNAME = config["coppernicus_acount"]["username"]
+    PASSWORD = config["coppernicus_acount"]["password"]
+
 # Import modules
-import copernicusmarine
-from flask import Flask, request
 
 app = Flask(__name__)
 
