@@ -187,4 +187,4 @@ fabric.properties
 data_folder
 
 *.cfg
-config.yaml
+*.yaml
