@@ -15,16 +15,6 @@ with open("config.yaml", "r") as f:
 # Import modules
 app = Flask(__name__)
 
-def fetch_data(request):
-    return copernicusmarine.open_dataset(
-        dataset_id=request["dataset_id_sst_gap_l3s"],
-        minimum_longitude=request["longitude"][0],
-        maximum_longitude=request["longitude"][1],
-        minimum_latitude=request["latitude"][0],
-        maximum_latitude=request["latitude"][1],
-        start_datetime=request["time"][0],
-        end_datetime=request["time"][1],
-        variables=request["variables"], username=USERNAME, password=PASSWORD)
 
 @app.route('/api/weather')
 def root():  # put application's code here
@@ -48,11 +38,19 @@ def root():  # put application's code here
     }
 
     # Load xarray dataset
-    sst_l3s = fetch_data(data_request)
+    sst_l3s = copernicusmarine.open_dataset(
+        dataset_id=data_request["dataset_id_sst_gap_l3s"],
+        minimum_longitude=data_request["longitude"][0],
+        maximum_longitude=data_request["longitude"][1],
+        minimum_latitude=data_request["latitude"][0],
+        maximum_latitude=data_request["latitude"][1],
+        start_datetime=data_request["time"][0],
+        end_datetime=data_request["time"][1],
+        variables=data_request["variables"], username=USERNAME, password=PASSWORD)
     return sst_l3s.to_dict()
 
 
 if __name__ == '__main__':
-    #sst_l3s = copernicusmarine.open_dataset(dataset_id= "cmems_obs-sst_atl_phy_nrt_l3s_P1D-m", username=USERNAME, password=PASSWORD)
+    sst_l3s = copernicusmarine.open_dataset(dataset_id= "cmems_obs-sst_atl_phy_nrt_l3s_P1D-m", username=USERNAME, password=PASSWORD)
     # Print loaded dataset information
     app.run()
