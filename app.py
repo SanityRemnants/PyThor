@@ -14,13 +14,15 @@ with open("config.yaml", "r") as f:
     PASSWORD = config["coppernicus_acount"]["password"]
 
 
-variables_dict = {"significant_wave_height":"nic",
-                  "wave_direction":"nic",
-                  "wave_period":"nic",
-                  "wind_direction":"nic",
-                  "sea_current_speed":"nic",
-                  "sea_current_direction":"nic",
-                  "tide_height":"nic"} #TODO podmienić nic na aktualne nazwy zmiennych z copernicusa
+variables_dict = {"significant_wave_height":"VHM0", #cmems_mod_glo_wav_anfc_0.083deg_PT3H-i
+                  "wave_direction":"VMDR",  #cmems_mod_glo_wav_anfc_0.083deg_PT3H-i
+                  "wave_period":"nic",  #cmems_mod_glo_wav_anfc_0.083deg_PT3H-i
+                  "wind_direction":"nic",   #
+                  "wind_speed":"nic",   #
+                  "sea_current_speed":"eastward_sea_water_velocity",  #cmems_mod_glo_phy-cur_anfc_0.083deg_PT6H-i
+                  "sea_current_direction":"northward_sea_water_velocity", #cmems_mod_glo_phy-cur_anfc_0.083deg_PT6H-i
+                  "tide_height":"zos"} #cmems_mod_glo_phy_anfc_0.083deg_PT1H-m
+                #TODO podmienić nic na aktualne nazwy zmiennych z copernicusa
 
 def parse_variables(request_vars):
     vars = []
