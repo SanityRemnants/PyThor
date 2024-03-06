@@ -26,7 +26,7 @@ tide_variables_dict = {"tide_height": "zos"}  # cmems_mod_glo_phy_anfc_0.083deg_
 
 
 # TODO podmienić nic na aktualne nazwy zmiennych z copernicusa
-
+# time, latitude, logitude
 def parse_variables(request_vars):
     wave_vars = []
     curr_vars = []
@@ -44,9 +44,9 @@ def parse_variables(request_vars):
 def fetch_tide(data, variables):
     data_request = {
         "dataset_id_sst_gap_l3s": "cmems_mod_glo_phy_anfc_0.083deg_PT1H-m",
-        "longitude": [data[0], data[1]],
-        "latitude": [data[2], data[3]],
-        "time": [data[4], data[5]],
+        "longitude": [data["longitude_start"], data["longitude_end"]],
+        "latitude": [data["latitude_start"], data["latitude_end"]],
+        "time": [data["time_start"], data["time_end"]],
         "variables": variables
     }
 
@@ -66,9 +66,9 @@ def fetch_tide(data, variables):
 def fetch_currents(data, variables):
     data_request = {
         "dataset_id_sst_gap_l3s": "cmems_mod_glo_phy-cur_anfc_0.083deg_PT6H-i",
-        "longitude": [data[0], data[1]],
-        "latitude": [data[2], data[3]],
-        "time": [data[4], data[5]],
+        "longitude": [data["longitude_start"], data["longitude_end"]],
+        "latitude": [data["latitude_start"], data["latitude_end"]],
+        "time": [data["time_start"], data["time_end"]],
         "variables": variables
     }
 
@@ -88,9 +88,9 @@ def fetch_currents(data, variables):
 def fetch_wave(data, variables):
     data_request = {
         "dataset_id_sst_gap_l3s": "cmems_mod_glo_wav_anfc_0.083deg_PT3H-i",
-        "longitude": [data[0], data[1]],
-        "latitude": [data[2], data[3]],
-        "time": [data[4], data[5]],
+        "longitude": [data["longitude_start"], data["longitude_end"]],
+        "latitude": [data["latitude_start"], data["latitude_end"]],
+        "time": [data["time_start"], data["time_end"]],
         "variables": variables
     }
 
@@ -117,17 +117,24 @@ def root():  # put application's code here
     latitude_end = request.args.get('latitude_end')
     logitude_start = request.args.get('logitude_start')
     logitude_end = request.args.get('logitude_end')
-    #interval = request.args.get('interval', 2)
+    interval = request.args.get('interval', 2)
     request_vars = request.args.get('variables', "").replace(" ", "").split(",")
-    epoch_time_start = int(request.args.get('time_end'))
-    epoch_time_end = int(request.args.get('time_start'))
+    epoch_time_start = int(request.args.get('time_start'))
+    epoch_time_end = int(request.args.get('time_end'))
     if not latitude_start or not latitude_end or not logitude_start or not logitude_end or not epoch_time_start or not epoch_time_end or len(
             request_vars) == 0:
         return Response(status=400)
     wave_vars, curr_vars, tide_vars = parse_variables(request_vars)
     time_start = datetime.fromtimestamp(epoch_time_start).date()
     time_end = datetime.fromtimestamp(epoch_time_end).date()
-    data = [float(logitude_start), float(logitude_end), float(latitude_start), float(latitude_end), str(time_start), str(time_end)]
+    data = {
+        "longitude_start": float(logitude_start),
+        "longitude_end": float(logitude_end),
+        "latitude_start": float(latitude_start),
+        "latitude_end": float(latitude_end),
+        "time_start": str(time_start),
+        "time_end": str(str(time_end))
+    }
     waves, tides, currents = None, None, None
     res = {}
     if len(wave_vars) > 0:
