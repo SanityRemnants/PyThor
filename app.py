@@ -1,9 +1,9 @@
-from asyncio import sleep
-
+import pytz
 from flask import Flask, request, Response
+from urllib.request import urlretrieve
 import copernicusmarine
 from datetime import datetime
-import json
+import xarray as xr
 
 import yaml
 
@@ -17,6 +17,13 @@ with open("config.yaml", "r") as f:
 wave_variables_dict = {"significant_wave_height": "VHM0",  # cmems_mod_glo_wav_anfc_0.083deg_PT3H-i
                        "wave_direction": "VMDR",  # cmems_mod_glo_wav_anfc_0.083deg_PT3H-i
                        "wave_period": "nic"}  # cmems_mod_glo_wav_anfc_0.083deg_PT3H-i
+
+def map_hour(hour):
+    forecast_hours = {(0, 5): "00", (6, 11): "06", (12, 17): "12", (18, 23): "18"}
+    for key in forecast_hours:
+        if key[0] < hour < key[1]:
+            return forecast_hours[key]
+
 # "wind_direction":"nic",
 # "wind_speed":"nic",
 curr_variables = ["sea_current_speed", "sea_current_direction"]
@@ -86,26 +93,19 @@ def fetch_currents(data, variables):
 
 
 def fetch_wave(data, variables):
-    data_request = {
-        "dataset_id_sst_gap_l3s": "cmems_mod_glo_wav_anfc_0.083deg_PT3H-i",
-        "longitude": [data["longitude_start"], data["longitude_end"]],
-        "latitude": [data["latitude_start"], data["latitude_end"]],
-        "time": [data["time_start"], data["time_end"]],
-        "variables": variables
-    }
+    now = datetime.now().astimezone(pytz.timezone('America/New_York'))
 
-    # Load xarray dataset
-    sst_l3s = copernicusmarine.open_dataset(
-        dataset_id=data_request["dataset_id_sst_gap_l3s"],
-        minimum_longitude=data_request["longitude"][0],
-        maximum_longitude=data_request["longitude"][1],
-        minimum_latitude=data_request["latitude"][0],
-        maximum_latitude=data_request["latitude"][1],
-        start_datetime=data_request["time"][0],
-        end_datetime=data_request["time"][1],
-        variables=data_request["variables"], username=USERNAME, password=PASSWORD)
-    return sst_l3s
+    forecast_hour = map_hour(now.hour)
 
+    url = (
+        "https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/gfs."+now.strftime("%Y%m%d")+"/"+forecast_hour+"/wave/gridded/"
+        "gfswave.t"+forecast_hour+"z.global.0p16.f027.grib2"
+    )
+    urlretrieve(url,"waves.grib2")
+    wave_unproccessed = xr.load_dataset("waves.grib2",engine='cfgrib')
+    for v in wave_unproccessed:
+        print("{}, {}, {}".format(v, wave_unproccessed[v].attrs["long_name"], wave_unproccessed[v].attrs["units"]))
+    return wave_unproccessed["swh"].values
 
 # Import modules
 app = Flask(__name__)
@@ -152,10 +152,9 @@ def root():  # put application's code here
 
 
 if __name__ == '__main__':
-    _ = copernicusmarine.open_dataset(dataset_id="cmems_mod_glo_wav_anfc_0.083deg_PT3H-i", username=USERNAME,
-                                      password=PASSWORD)
-    _ = copernicusmarine.open_dataset(dataset_id="cmems_mod_glo_phy-cur_anfc_0.083deg_PT6H-i", username=USERNAME,
-                                      password=PASSWORD)
-    _ = copernicusmarine.open_dataset(dataset_id="cmems_mod_glo_phy_anfc_0.083deg_PT1H-m", username=USERNAME,
-                                      password=PASSWORD)
-    app.run()
+    #_ = copernicusmarine.open_dataset(dataset_id="cmems_mod_glo_phy-cur_anfc_0.083deg_PT6H-i", username=USERNAME,
+    #                                  password=PASSWORD)
+    #_ = copernicusmarine.open_dataset(dataset_id="cmems_mod_glo_phy_anfc_0.083deg_PT1H-m", username=USERNAME,
+    #                                  password=PASSWORD)
+    print(fetch_wave(0,0))
+    #app.run()
