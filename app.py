@@ -21,7 +21,7 @@ wave_variables_dict = {"significant_wave_height": "VHM0",  # cmems_mod_glo_wav_a
 def map_hour(hour):
     forecast_hours = {(0, 5): "00", (6, 11): "06", (12, 17): "12", (18, 23): "18"}
     for key in forecast_hours:
-        if key[0] < hour < key[1]:
+        if key[0] <= hour <= key[1]:
             return forecast_hours[key]
 
 # "wind_direction":"nic",
@@ -99,7 +99,7 @@ def fetch_wave(data, variables):
 
     url = (
         "https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/gfs."+now.strftime("%Y%m%d")+"/"+forecast_hour+"/wave/gridded/"
-        "gfswave.t"+forecast_hour+"z.global.0p16.f027.grib2"
+        "gfswave.t"+forecast_hour+"z.global.0p16.f000.grib2"
     )
     urlretrieve(url,"waves.grib2")
     wave_unproccessed = xr.load_dataset("waves.grib2",engine='cfgrib')
