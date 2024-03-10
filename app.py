@@ -101,11 +101,33 @@ def fetch_wave(data, variables):
         "https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/gfs."+now.strftime("%Y%m%d")+"/"+forecast_hour+"/wave/gridded/"
         "gfswave.t"+forecast_hour+"z.global.0p16.f000.grib2"
     )
-    urlretrieve(url,"waves.grib2")
-    wave_unproccessed = xr.load_dataset("waves.grib2",engine='cfgrib')
-    for v in wave_unproccessed:
-        print("{}, {}, {}".format(v, wave_unproccessed[v].attrs["long_name"], wave_unproccessed[v].attrs["units"]))
-    return wave_unproccessed["swh"].values
+    try:
+        urlretrieve(url,"waves.grib2")
+        wave_unproccessed = xr.load_dataset("waves.grib2",engine='cfgrib')
+        for v in wave_unproccessed:
+            print("{}, {}, {}".format(v, wave_unproccessed[v].attrs["long_name"], wave_unproccessed[v].attrs["units"]))
+        return wave_unproccessed["swh"].values
+    except Exception as e:
+        return "Exception: " + str(e)
+
+def fetch_wind(data, variables):
+    now = datetime.now().astimezone(pytz.timezone('America/New_York'))
+
+    forecast_hour = map_hour(now.hour)
+
+    url = (
+        "https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/gfs."+now.strftime("%Y%m%d")+"/"+forecast_hour+"/atmos/"
+        "gfs.t"+forecast_hour+"z.pgrb2.0p25.f000"
+    )
+    try:
+        urlretrieve(url,"")
+        wind_unproccessed = xr.load_dataset("waves.grib2",engine='cfgrib')
+        # TODO tu na pewno nie ma być waves.grib2 ale nie do końca łapię jak to działa, więc na razie jest jak w fetch_wave + w urlretrieve też coś chuba w "" powinno być
+        for v in wind_unproccessed:
+            print("{}, {}, {}".format(v, wind_unproccessed[v].attrs["long_name"], wind_unproccessed[v].attrs["units"]))
+        return wind_unproccessed["u"].values
+    except Exception as e:
+        return "Exception: " + str(e)
 
 # Import modules
 app = Flask(__name__)
@@ -156,5 +178,5 @@ if __name__ == '__main__':
     #                                  password=PASSWORD)
     #_ = copernicusmarine.open_dataset(dataset_id="cmems_mod_glo_phy_anfc_0.083deg_PT1H-m", username=USERNAME,
     #                                  password=PASSWORD)
-    print(fetch_wave(0,0))
+    print(fetch_wind(0,0))
     #app.run()
