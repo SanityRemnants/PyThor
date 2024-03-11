@@ -101,9 +101,11 @@ def fetch_wave(data, variables):
         "https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/gfs."+now.strftime("%Y%m%d")+"/"+forecast_hour+"/wave/gridded/"
         "gfswave.t"+forecast_hour+"z.global.0p16.f000.grib2"
     )
+
+    filename = "ww" + now.strftime("%Y%m%d") + forecast_hour + ".grib2"
     try:
-        urlretrieve(url,"waves.grib2")
-        wave_unproccessed = xr.load_dataset("waves.grib2",engine='cfgrib')
+        urlretrieve(url,filename)
+        wave_unproccessed = xr.load_dataset(filename,engine='cfgrib')
         for v in wave_unproccessed:
             print("{}, {}, {}".format(v, wave_unproccessed[v].attrs["long_name"], wave_unproccessed[v].attrs["units"]))
         return wave_unproccessed["swh"].values
@@ -116,12 +118,13 @@ def fetch_wind(data, variables):
     forecast_hour = map_hour(now.hour)
 
     url = (
-        "https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/gfs."+now.strftime("%Y%m%d")+"/"+forecast_hour+"/atmos/"
-        "gfs.t"+forecast_hour+"z.pgrb2.0p25.f000"
+        "https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/gfs."+now.strftime("%Y%m%d")+"/"+forecast_hour+"/wave/gridded/"
+        "gfswave.t"+forecast_hour+"z.global.0p16.f000.grib2"
     )
+    filename = "ww" +now.strftime("%Y%m%d")+ forecast_hour +".grib2"
     try:
-        urlretrieve(url,"")
-        wind_unproccessed = xr.load_dataset("waves.grib2",engine='cfgrib')
+        urlretrieve(url,filename)
+        wind_unproccessed = xr.load_dataset(filename,engine='cfgrib')
         # TODO tu na pewno nie ma być waves.grib2 ale nie do końca łapię jak to działa, więc na razie jest jak w fetch_wave + w urlretrieve też coś chuba w "" powinno być
         for v in wind_unproccessed:
             print("{}, {}, {}".format(v, wind_unproccessed[v].attrs["long_name"], wind_unproccessed[v].attrs["units"]))
