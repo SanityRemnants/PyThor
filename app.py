@@ -14,10 +14,6 @@ with open("config.yaml", "r") as f:
     USERNAME = config["coppernicus_acount"]["username"]
     PASSWORD = config["coppernicus_acount"]["password"]
 
-wave_variables_dict = {"significant_wave_height": "VHM0",  # cmems_mod_glo_wav_anfc_0.083deg_PT3H-i
-                       "wave_direction": "VMDR",  # cmems_mod_glo_wav_anfc_0.083deg_PT3H-i
-                       "wave_period": "nic"}  # cmems_mod_glo_wav_anfc_0.083deg_PT3H-i
-
 
 def map_hour(hour):
     forecast_hours = {(0, 5): "00", (6, 11): "06",
