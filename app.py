@@ -23,14 +23,12 @@ def map_hour(hour):
             return forecast_hours[key]
 
 
-wave_dict = {
-    "wave_direction": "dirpw",
-    "wave_height": "swh",
-    "wave_period": "perpw"
-}
-wind_dict = {
-    "wind_direction": "wdir",
-    "wind_speed": "ws"
+wave_and_wind_dict = {
+    "wave_direction": ["dirpw"],
+    "wave_height": ["swh"],
+    "wave_period": ["perpw"],
+    "wind_direction": ["u", "v"],
+    "wind_speed": ["ws"]
 }
 curr_variables = ["sea_current_speed", "sea_current_direction"]
 curr_variables_names = ["eastward_sea_water_velocity",
@@ -42,17 +40,18 @@ tide_variables_dict = {"tide_height": "zos"}
 # TODO podmienić nic na aktualne nazwy zmiennych z copernicusa
 # time, latitude, logitude
 def parse_variables(request_vars):
-    wave_vars = []
+    wave_and_wind_vars = []
     curr_vars = []
     tide_vars = []
     for v in request_vars:
-        if v in wave_variables_dict.keys():
-            wave_vars.append(wave_variables_dict[v])
+        if v in wave_and_wind_dict.keys():
+            for name in wave_and_wind_dict[v]:
+                wave_and_wind_vars.append(name)
         if v in curr_variables:
             curr_vars = curr_variables_names.copy()
         if v in tide_variables_dict:
             tide_vars.append(tide_variables_dict[v])
-    return wave_vars, curr_vars, tide_vars
+    return wave_and_wind_vars, curr_vars, tide_vars
 
 
 def fetch_tide(data, variables):
@@ -99,7 +98,7 @@ def fetch_currents(data, variables):
     return sst_l3s
 
 
-def fetch_wave(data, variables):
+def fetch_wave_and_wind(data, variables):
     now = datetime.now().astimezone(pytz.timezone('America/New_York'))
 
     forecast_hour = map_hour(now.hour)
@@ -122,29 +121,6 @@ def fetch_wave(data, variables):
         return "Exception: " + str(e)
 
 
-def fetch_wind(data, variables):
-    now = datetime.now().astimezone(pytz.timezone('America/New_York'))
-
-    forecast_hour = map_hour(now.hour)
-
-    url = (
-        "https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/gfs." +
-        now.strftime("%Y%m%d")+"/"+forecast_hour+"/wave/gridded/"
-        "gfswave.t"+forecast_hour+"z.global.0p16.f000.grib2"
-    )
-    filename = "ww" + now.strftime("%Y%m%d") + forecast_hour + ".grib2"
-    try:
-        urlretrieve(url, filename)
-        wind_unproccessed = xr.load_dataset(filename, engine='cfgrib')
-        # TODO tu na pewno nie ma być waves.grib2 ale nie do końca łapię jak to działa, więc na razie jest jak w fetch_wave + w urlretrieve też coś chuba w "" powinno być
-        for v in wind_unproccessed:
-            print("{}, {}, {}".format(
-                v, wind_unproccessed[v].attrs["long_name"], wind_unproccessed[v].attrs["units"]))
-        return wind_unproccessed["u"].values
-    except Exception as e:
-        return "Exception: " + str(e)
-
-
 # Import modules
 app = Flask(__name__)
 
@@ -155,7 +131,7 @@ def root():  # put application's code here
     latitude_end = request.args.get('latitude_end')
     logitude_start = request.args.get('logitude_start')
     logitude_end = request.args.get('logitude_end')
-    interval = request.args.get('interval', 2)
+    #interval = request.args.get('interval', 2)
     request_vars = request.args.get(
         'variables', "").replace(" ", "").split(",")
     epoch_time_start = int(request.args.get('time_start'))
@@ -163,7 +139,7 @@ def root():  # put application's code here
     if not latitude_start or not latitude_end or not logitude_start or not logitude_end or not epoch_time_start or not epoch_time_end or len(
             request_vars) == 0:
         return Response(status=400)
-    wave_vars, curr_vars, tide_vars = parse_variables(request_vars)
+    wave_and_wind_vars, curr_vars, tide_vars = parse_variables(request_vars)
     time_start = datetime.fromtimestamp(epoch_time_start).date()
     time_end = datetime.fromtimestamp(epoch_time_end).date()
     data = {
@@ -174,11 +150,11 @@ def root():  # put application's code here
         "time_start": str(time_start),
         "time_end": str(str(time_end))
     }
-    waves, tides, currents = None, None, None
+    waves_and_wind, tides, currents = None, None, None, None
     res = {}
-    if len(wave_vars) > 0:
-        waves = fetch_wave(data, wave_vars).to_dict()
-        res["waves"] = waves
+    if len(wave_and_wind_vars) > 0:
+        waves_and_wind = fetch_wave_and_wind(data, wave_and_wind_vars).tolist()
+        res["waves_and_wind"] = waves_and_wind
     if len(tide_vars) > 0:
         tides = fetch_tide(data, tide_vars).to_dict()
         res["tides"] = tides
@@ -195,5 +171,5 @@ if __name__ == '__main__':
     #                                  password=PASSWORD)
     # _ = copernicusmarine.open_dataset(dataset_id="cmems_mod_glo_phy_anfc_0.083deg_PT1H-m", username=USERNAME,
     #                                  password=PASSWORD)
-    print(fetch_wave(0, 0))
-    # app.run()
+    #print(fetch_wave(0, 0))
+    app.run()
