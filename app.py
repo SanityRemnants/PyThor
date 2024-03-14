@@ -106,7 +106,7 @@ def fetch_wave_and_wind(data, variables):
     url = (
         "https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/gfs." +
         now.strftime("%Y%m%d")+"/"+forecast_hour+"/wave/gridded/"
-        "gfswave.t"+forecast_hour+"z.global.0p16.f000.grib2"
+        "gfswave.t"+forecast_hour+"z.global.0p25.f000.grib2"
     )
 
     filename = "ww" + now.strftime("%Y%m%d") + forecast_hour + ".grib2"
@@ -131,7 +131,7 @@ def root():  # put application's code here
     latitude_end = request.args.get('latitude_end')
     logitude_start = request.args.get('logitude_start')
     logitude_end = request.args.get('logitude_end')
-    #interval = request.args.get('interval', 2)
+    # interval = request.args.get('interval', 2)
     request_vars = request.args.get(
         'variables', "").replace(" ", "").split(",")
     epoch_time_start = int(request.args.get('time_start'))
