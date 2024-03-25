@@ -90,7 +90,7 @@ class DataRequest:
             return False
         if not (-90.0 <= float(self.__latitude.end) <= 90.0):
             return False
-        if float(self.__latitude.start) < float(self.__latitude.end):
+        if float(self.__latitude.start) > float(self.__latitude.end):
             return False
         if self.__time is None:
             return False

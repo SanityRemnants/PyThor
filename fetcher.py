@@ -26,8 +26,8 @@ class Fetcher:
         for key in forecast_hours:
             if key[0] <= hour <= key[1]:
                 return forecast_hours[key]
-    def fetch_currents(self, currents):
-        data_request = currents.parse_for_copernicus_currents()
+    def fetch_currents(self):
+        data_request = self.__request.parse_for_copernicus_currents()
         sst_l3s = copernicusmarine.open_dataset(
             dataset_id=data_request["dataset_id"],
             minimum_longitude=data_request["longitude"][0],
@@ -39,8 +39,8 @@ class Fetcher:
             variables=data_request["variables"], username=self.USERNAME, password=self.PASSWORD)
         return sst_l3s
 
-    def fetch_tide(self, tide):
-        data_request = tide.parse_for_copernicus_tide()
+    def fetch_tide(self):
+        data_request = self.__request.parse_for_copernicus_tide()
         sst_l3s = copernicusmarine.open_dataset(
             dataset_id=data_request["dataset_id"],
             minimum_longitude=data_request["longitude"][0],
@@ -52,7 +52,7 @@ class Fetcher:
             variables=data_request["variables"], username=self.USERNAME, password=self.PASSWORD)
         return sst_l3s
 
-    def fetch_wave_and_wind(self, request):
+    def fetch_wave_and_wind(self):
         now = datetime.now().astimezone(pytz.timezone('America/New_York'))
 
         forecast_hour = self.map_hour(now.hour)
@@ -60,7 +60,7 @@ class Fetcher:
         url = (
                 "https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/gfs." +
                 now.strftime("%Y%m%d") + "/" + forecast_hour + "/wave/gridded/"
-                                                               "gfswave.t" + forecast_hour + "z.global.0p25.f000.grib2" + request.parse_for_noaa()
+                                                               "gfswave.t" + forecast_hour + "z.global.0p25.f000.grib2" + self.__request.parse_for_noaa()
         )
 
         filename = "ww" + now.strftime("%Y%m%d") + forecast_hour + ".grib2"
@@ -79,11 +79,11 @@ class Fetcher:
         waves_and_wind, tides, currents = None, None, None
         res = {}
         if len(self.__request.noaa_variables) > 0:
-            waves_and_wind = self.fetch_wave_and_wind(self.__request.noaa_variables).tolist()
+            waves_and_wind = self.fetch_wave_and_wind().tolist()
         if len(self.__request.tide_variables) > 0:
-            tides = self.fetch_tide(self.__request.tide_variables).to_dict()
+            tides = self.fetch_tide().to_dict()
         if len(self.__request.currents_variables) > 0:
-            currents = self.fetch_currents(self.__request.currents_variables).to_dict()
+            currents = self.fetch_currents().to_dict()
         res["waves_and_wind"] = waves_and_wind
         res["tides"] = tides
         res["currents"] = currents
