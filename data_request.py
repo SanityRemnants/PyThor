@@ -1,4 +1,5 @@
 from datetime import datetime
+from copy import copy
 
 class DataRequest:
     class __RangeParam:
@@ -38,8 +39,8 @@ class DataRequest:
         self.__latitude = self.__RangeParam(float(latitude_start), float(latitude_end))
         self.__longitude = self.__RangeParam(float(longitude_start), float(longitude_end))
         try:
-            self.__time = self.__RangeParam(datetime.fromtimestamp(int(time_start)).date,
-                                            datetime.fromtimestamp(int(time_end)).date)
+            self.__time = self.__RangeParam(datetime.fromtimestamp(int(time_start)).date(),
+                                            datetime.fromtimestamp(int(time_end)).date())
         except:
             self.__time = None
         self.__time_interval = float(interval)
@@ -59,7 +60,9 @@ class DataRequest:
         return result
 
     def get_time(self):
-        return self.__time.start, self.__time.end
+        time_start = self.__time.start
+        time_end = self.__time.end
+        return time_start, time_end
 
     def parse_for_copernicus_currents(self):
         result = {

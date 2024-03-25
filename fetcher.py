@@ -54,16 +54,16 @@ class Fetcher:
 
     def fetch_wave_and_wind(self):
         now = datetime.now().astimezone(pytz.timezone('America/New_York'))
-
-        forecast_hour = self.map_hour(now.hour)
+        time_start, time_end = self.__request.get_time()
+        forecast_hour = self.map_hour(time_start.hour)
 
         url = (
-                "https://nomads.ncep.noaa.gov/cgi-bin/filter_gfswave.pl?dir=%2Fgfs" +
-                now.strftime("%Y%m%d") + "%2F" + forecast_hour + "%2Fwave%2Fgridded&file="
+                "https://nomads.ncep.noaa.gov/cgi-bin/filter_gfswave.pl?dir=%2Fgfs." +
+                time_start.strftime("%Y%m%d") + "%2F" + forecast_hour + "%2Fwave%2Fgridded&file="
                                                                "gfswave.t" + forecast_hour + "z.global.0p25.f000.grib2" + self.__request.parse_for_noaa()
         )
 
-        filename = "ww" + now.strftime("%Y%m%d") + forecast_hour + ".grib2"
+        filename = "ww" + time_start.strftime("%Y%m%d") + forecast_hour + ".grib2"
         try:
             urlretrieve(url, filename)
             wave_unproccessed = xr.load_dataset(filename, engine='cfgrib')
@@ -72,14 +72,18 @@ class Fetcher:
                     v, wave_unproccessed[v].attrs["long_name"], wave_unproccessed[v].attrs["units"]))
             return wave_unproccessed["swh"].values
         except Exception as e:
-            return "Exception: " + str(e)
+            return str(e)
 
 
     def fetch(self):
         waves_and_wind, tides, currents = None, None, None
         res = {}
         if len(self.__request.noaa_variables) > 0:
-            waves_and_wind = self.fetch_wave_and_wind().tolist()
+            fetched_value = self.fetch_wave_and_wind()
+            if fetched_value is not str:
+                waves_and_wind = fetched_value.tolist()
+            else:
+                waves_and_wind = fetched_value
         if len(self.__request.tide_variables) > 0:
             tides = self.fetch_tide().to_dict()
         if len(self.__request.currents_variables) > 0:
