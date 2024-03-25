@@ -1,19 +1,5 @@
 from datetime import datetime
 
-wave_and_wind_dict = {
-    "wave_direction": ["var_DIRPW=on"],
-    "wave_height": ["var_HTSGW=on"],
-    "wave_period": ["var_PERPW=on"],
-    "wind_direction": ["var_UGRD=on", "var_VGRD=on"],
-    "wind_speed": ["var_WIND=on"]
-}
-curr_variables = ["sea_current_speed", "sea_current_direction"]
-curr_variables_names = ["eastward_sea_water_velocity",
-                        "northward_sea_water_velocity"]  # cmems_mod_glo_phy-cur_anfc_0.083deg_PT6H-i
-
-tide_variables_dict = {"tide_height": "zos"}  # cmems_mod_glo_phy_anfc_0.083deg_PT1H-m
-
-
 class DataRequest:
     class __RangeParam:
         def __init__(self, start, end):
@@ -22,6 +8,18 @@ class DataRequest:
 
     @staticmethod
     def __parse_variables(request_vars):
+        wave_and_wind_dict = {
+            "wave_direction": ["var_DIRPW=on"],
+            "wave_height": ["var_HTSGW=on"],
+            "wave_period": ["var_PERPW=on"],
+            "wind_direction": ["var_UGRD=on", "var_VGRD=on"],
+            "wind_speed": ["var_WIND=on"]
+        }
+        curr_variables = ["sea_current_speed", "sea_current_direction"]
+        curr_variables_names = ["eastward_sea_water_velocity",
+                                "northward_sea_water_velocity"]  # cmems_mod_glo_phy-cur_anfc_0.083deg_PT6H-i
+
+        tide_variables_dict = {"tide_height": "zos"}  # cmems_mod_glo_phy_anfc_0.083deg_PT1H-m
         noaa_vars = []
         curr_vars = []
         tide_vars = []
