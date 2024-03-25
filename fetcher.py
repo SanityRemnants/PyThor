@@ -80,11 +80,11 @@ class Fetcher:
         res = {}
         if len(self.__request.noaa_variables) > 0:
             waves_and_wind = self.fetch_wave_and_wind(self.__request.noaa_variables).tolist()
-            res["waves_and_wind"] = waves_and_wind
         if len(self.__request.tide_variables) > 0:
             tides = self.fetch_tide(self.__request.tide_variables).to_dict()
-            res["tides"] = tides
         if len(self.__request.currents_variables) > 0:
             currents = self.fetch_currents(self.__request.currents_variables).to_dict()
-            res["currents"] = currents
+        res["waves_and_wind"] = waves_and_wind
+        res["tides"] = tides
+        res["currents"] = currents
         return res
