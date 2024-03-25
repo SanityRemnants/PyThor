@@ -39,8 +39,8 @@ class DataRequest:
         self.__latitude = self.__RangeParam(float(latitude_start), float(latitude_end))
         self.__longitude = self.__RangeParam(float(longitude_start), float(longitude_end))
         try:
-            self.__time = self.__RangeParam(datetime.fromtimestamp(int(time_start)).date(),
-                                            datetime.fromtimestamp(int(time_end)).date())
+            self.__time = self.__RangeParam(datetime.fromtimestamp(int(time_start)),
+                                            datetime.fromtimestamp(int(time_end)))
         except:
             self.__time = None
         self.__time_interval = float(interval)
@@ -69,7 +69,7 @@ class DataRequest:
             "dataset_id": "cmems_mod_glo_phy-cur_anfc_0.083deg_PT6H-i",
             "longitude": [str(self.__longitude.start), str(self.__longitude.end)],
             "latitude": [str(self.__latitude.start), str(self.__latitude.end)],
-            "time": [self.__time.start, self.__time.end],
+            "time": [self.__time.start.date(), self.__time.end.date()],
             "variables": self.currents_variables
         }
         return result
@@ -79,7 +79,7 @@ class DataRequest:
             "dataset_id": "cmems_mod_glo_phy_anfc_0.083deg_PT1H-m",
             "longitude": [str(self.__longitude.start), str(self.__longitude.end)],
             "latitude": [str(self.__latitude.start), str(self.__latitude.end)],
-            "time": [self.__time.start, self.__time.end],
+            "time": [self.__time.start.date(), self.__time.end.date()],
             "variables": self.tide_variables
         }
         return result
