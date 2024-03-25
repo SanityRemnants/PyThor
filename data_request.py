@@ -35,14 +35,14 @@ class DataRequest:
 
     def __init__(self, latitude_start, latitude_end, longitude_start, longitude_end, time_start, time_end, interval,
                  variables):
-        self.__latitude = self.__RangeParam(latitude_start, latitude_end)
-        self.__longitude = self.__RangeParam(longitude_start, longitude_end)
+        self.__latitude = self.__RangeParam(float(latitude_start), float(latitude_end))
+        self.__longitude = self.__RangeParam(float(longitude_start), float(longitude_end))
         try:
             self.__time = self.__RangeParam(datetime.fromtimestamp(int(time_start)).date,
                                             datetime.fromtimestamp(int(time_end)).date)
         except:
             self.__time = None
-        self.__time_interval = interval
+        self.__time_interval = float(interval)
         self.noaa_variables, self.currents_variables, self.tide_variables = self.__parse_variables(variables)
 
     def parse_for_noaa(self):
@@ -50,10 +50,10 @@ class DataRequest:
         right = self.__longitude.end + 180.0
         if right < left:
             right = 360 + right
-        result = "&lev_surface=on&subregion=&toplat=" + self.__latitude.end \
+        result = "&lev_surface=on&subregion=&toplat=" + str(self.__latitude.end) \
                  + "&leftlon=" + str(left) \
                  + "&rightlon=" + str(right) \
-                 + "&bottomlat=" + self.__latitude.start
+                 + "&bottomlat=" + str(self.__latitude.start)
         for v in self.noaa_variables:
             result += "&" + v
         return result
@@ -64,8 +64,8 @@ class DataRequest:
     def parse_for_copernicus_currents(self):
         result = {
             "dataset_id": "cmems_mod_glo_phy-cur_anfc_0.083deg_PT6H-i",
-            "longitude": [self.__longitude.start, self.__longitude.end],
-            "latitude": [self.__latitude.start, self.__latitude.end],
+            "longitude": [str(self.__longitude.start), str(self.__longitude.end)],
+            "latitude": [str(self.__latitude.start), str(self.__latitude.end)],
             "time": [self.__time.start, self.__time.end],
             "variables": self.currents_variables
         }
@@ -74,23 +74,23 @@ class DataRequest:
     def parse_for_copernicus_tide(self):
         result = {
             "dataset_id": "cmems_mod_glo_phy_anfc_0.083deg_PT1H-m",
-            "longitude": [self.__longitude.start, self.__longitude.end],
-            "latitude": [self.__latitude.start, self.__latitude.end],
+            "longitude": [str(self.__longitude.start), str(self.__longitude.end)],
+            "latitude": [str(self.__latitude.start), str(self.__latitude.end)],
             "time": [self.__time.start, self.__time.end],
             "variables": self.tide_variables
         }
         return result
 
     def is_valid(self):
-        if not (-180.0 <= float(self.__longitude.start) <= 180.0):
+        if not (-180.0 <= self.__longitude.start <= 180.0):
             return False
-        if not (-180.0 <= float(self.__longitude.end) <= 180.0):
+        if not (-180.0 <= self.__longitude.end <= 180.0):
             return False
-        if not (-90.0 <= float(self.__latitude.start) <= 90.0):
+        if not (-90.0 <= self.__latitude.start <= 90.0):
             return False
-        if not (-90.0 <= float(self.__latitude.end) <= 90.0):
+        if not (-90.0 <= self.__latitude.end <= 90.0):
             return False
-        if float(self.__latitude.start) > float(self.__latitude.end):
+        if self.__latitude.start > self.__latitude.end:
             return False
         if self.__time is None:
             return False
