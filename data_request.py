@@ -39,15 +39,22 @@ class DataRequest:
                  variables):
         self.__latitude = self.__RangeParam(latitude_start, latitude_end)
         self.__longitude = self.__RangeParam(longitude_start, longitude_end)
-        self.__time = self.__RangeParam(datetime.fromtimestamp(int(time_start)).date,
-                                        datetime.fromtimestamp(int(time_end)).date)
+        try:
+            self.__time = self.__RangeParam(datetime.fromtimestamp(int(time_start)).date,
+                                            datetime.fromtimestamp(int(time_end)).date)
+        except:
+            self.__time = None
         self.__time_interval = interval
         self.noaa_variables, self.currents_variables, self.tide_variables = self.__parse_variables(variables)
 
     def parse_for_noaa(self):
+        left = self.__longitude.start + 180.0
+        right = self.__longitude.end + 180.0
+        if right < left:
+            right = 360 + right
         result = "&lev_surface=on&subregion=&toplat=" + self.__latitude.end \
-                 + "&leftlon=" + self.__longitude.start \
-                 + "&rightlon=" + self.__longitude.end \
+                 + "&leftlon=" + str(left) \
+                 + "&rightlon=" + str(right) \
                  + "&bottomlat=" + self.__latitude.start
         for v in self.noaa_variables:
             result += "&" + v
@@ -77,4 +84,18 @@ class DataRequest:
         return result
 
     def is_valid(self):
+        if not (-180.0 <= self.__longitude.start <= 180.0):
+            return False
+        if not (-180.0 <= self.__longitude.end <= 180.0):
+            return False
+        if not (-90.0 <= self.__latitude.start <= 90.0):
+            return False
+        if not (-90.0 <= self.__latitude.end <= 90.0):
+            return False
+        if self.__latitude.start < self.__latitude.end:
+            return False
+        if self.__time is None:
+            return False
+        if len(self.tide_variables) == 0 and len(self.currents_variables) == 0 and len(self.noaa_variables) == 0:
+            return False
         return True
