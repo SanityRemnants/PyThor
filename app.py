@@ -5,9 +5,11 @@ import copernicusmarine
 from datetime import datetime
 import xarray as xr
 from data_request import DataRequest
+from fetcher import Fetcher
 
 import yaml
 
+'''
 USERNAME = ""
 PASSWORD = ""
 with open("config.yaml", "r") as f:
@@ -82,20 +84,23 @@ def fetch_wave_and_wind(request):
     except Exception as e:
         return "Exception: " + str(e)
 
-
+'''
 # Import modules
 app = Flask(__name__)
 
 
 @app.route('/api/weather')
 def root():  # put application's code here
-    data_request = DataRequest(request.args.get('latitude_start'),request.args.get('latitude_end'),
-                               request.args.get('logitude_start'),request.args.get('logitude_end'),
-                               request.args.get('time_start'),request.args.get('time_end'),request.args.get('interval', 2),
+    data_request = DataRequest(request.args.get('latitude_start'), request.args.get('latitude_end'),
+                               request.args.get('logitude_start'), request.args.get('logitude_end'),
+                               request.args.get('time_start'), request.args.get('time_end'),
+                               request.args.get('interval', 2),
                                request.args.get('variables', "").replace(" ", "").split(","))
     if not data_request.is_valid():
         return Response(status=400)
-    waves_and_wind, tides, currents = None, None, None
+
+    fetcher = Fetcher(data_request)
+    '''waves_and_wind, tides, currents = None, None, None
     res = {}
     if len(wave_and_wind_vars) > 0:
         waves_and_wind = fetch_wave_and_wind(data, wave_and_wind_vars).tolist()
@@ -108,7 +113,8 @@ def root():  # put application's code here
         res["currents"] = currents
     # Set parameters
 
-    return res
+    return res'''
+    return fetcher.fetch()
 
 
 if __name__ == '__main__':
@@ -116,5 +122,5 @@ if __name__ == '__main__':
     #                                  password=PASSWORD)
     # _ = copernicusmarine.open_dataset(dataset_id="cmems_mod_glo_phy_anfc_0.083deg_PT1H-m", username=USERNAME,
     #                                  password=PASSWORD)
-    #print(fetch_wave(0, 0))
+    # print(fetch_wave(0, 0))
     app.run()
