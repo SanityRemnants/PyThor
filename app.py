@@ -4,6 +4,7 @@ from urllib.request import urlretrieve
 import copernicusmarine
 from datetime import datetime
 import xarray as xr
+from data_request import DataRequest
 
 import yaml
 
@@ -22,50 +23,17 @@ def map_hour(hour):
         if key[0] <= hour <= key[1]:
             return forecast_hours[key]
 
-
-wave_and_wind_dict = {
-    "wave_direction": ["dirpw"],
-    "wave_height": ["swh"],
-    "wave_period": ["perpw"],
-    "wind_direction": ["u", "v"],
-    "wind_speed": ["ws"]
-}
-curr_variables = ["sea_current_speed", "sea_current_direction"]
-curr_variables_names = ["eastward_sea_water_velocity",
-                        "northward_sea_water_velocity"]  # ,  #cmems_mod_glo_phy-cur_anfc_0.083deg_PT6H-i
-# cmems_mod_glo_phy_anfc_0.083deg_PT1H-m
-tide_variables_dict = {"tide_height": "zos"}
-
-
 # TODO podmienić nic na aktualne nazwy zmiennych z copernicusa
 # time, latitude, logitude
-def parse_variables(request_vars):
-    wave_and_wind_vars = []
-    curr_vars = []
-    tide_vars = []
-    for v in request_vars:
-        if v in wave_and_wind_dict.keys():
-            for name in wave_and_wind_dict[v]:
-                wave_and_wind_vars.append(name)
-        if v in curr_variables:
-            curr_vars = curr_variables_names.copy()
-        if v in tide_variables_dict:
-            tide_vars.append(tide_variables_dict[v])
-    return wave_and_wind_vars, curr_vars, tide_vars
 
 
-def fetch_tide(data, variables):
-    data_request = {
-        "dataset_id_sst_gap_l3s": "cmems_mod_glo_phy_anfc_0.083deg_PT1H-m",
-        "longitude": [data["longitude_start"], data["longitude_end"]],
-        "latitude": [data["latitude_start"], data["latitude_end"]],
-        "time": [data["time_start"], data["time_end"]],
-        "variables": variables
-    }
+
+def fetch_tide(request):
+    data_request = request.parse_for_copernicus_currents()
 
     # Load xarray dataset
     sst_l3s = copernicusmarine.open_dataset(
-        dataset_id=data_request["dataset_id_sst_gap_l3s"],
+        dataset_id=data_request["dataset_id"],
         minimum_longitude=data_request["longitude"][0],
         maximum_longitude=data_request["longitude"][1],
         minimum_latitude=data_request["latitude"][0],
@@ -76,18 +44,12 @@ def fetch_tide(data, variables):
     return sst_l3s
 
 
-def fetch_currents(data, variables):
-    data_request = {
-        "dataset_id_sst_gap_l3s": "cmems_mod_glo_phy-cur_anfc_0.083deg_PT6H-i",
-        "longitude": [data["longitude_start"], data["longitude_end"]],
-        "latitude": [data["latitude_start"], data["latitude_end"]],
-        "time": [data["time_start"], data["time_end"]],
-        "variables": variables
-    }
+def fetch_currents(request):
+    data_request = request.parse_for_copernicus_currents()
 
     # Load xarray dataset
-    sst_l3s = copernicusmarine.open_dataset(
-        dataset_id=data_request["dataset_id_sst_gap_l3s"],
+    current = copernicusmarine.open_dataset(
+        dataset_id=data_request["dataset_id"],
         minimum_longitude=data_request["longitude"][0],
         maximum_longitude=data_request["longitude"][1],
         minimum_latitude=data_request["latitude"][0],
@@ -98,7 +60,7 @@ def fetch_currents(data, variables):
     return sst_l3s
 
 
-def fetch_wave_and_wind(data, variables):
+def fetch_wave_and_wind(request):
     now = datetime.now().astimezone(pytz.timezone('America/New_York'))
 
     forecast_hour = map_hour(now.hour)
@@ -106,7 +68,7 @@ def fetch_wave_and_wind(data, variables):
     url = (
         "https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/gfs." +
         now.strftime("%Y%m%d")+"/"+forecast_hour+"/wave/gridded/"
-        "gfswave.t"+forecast_hour+"z.global.0p25.f000.grib2"
+        "gfswave.t"+forecast_hour+"z.global.0p25.f000.grib2" + request.parse_for_noaa()
     )
 
     filename = "ww" + now.strftime("%Y%m%d") + forecast_hour + ".grib2"
@@ -127,30 +89,13 @@ app = Flask(__name__)
 
 @app.route('/api/weather')
 def root():  # put application's code here
-    latitude_start = request.args.get('latitude_start')
-    latitude_end = request.args.get('latitude_end')
-    logitude_start = request.args.get('logitude_start')
-    logitude_end = request.args.get('logitude_end')
-    # interval = request.args.get('interval', 2)
-    request_vars = request.args.get(
-        'variables', "").replace(" ", "").split(",")
-    epoch_time_start = int(request.args.get('time_start'))
-    epoch_time_end = int(request.args.get('time_end'))
-    if not latitude_start or not latitude_end or not logitude_start or not logitude_end or not epoch_time_start or not epoch_time_end or len(
-            request_vars) == 0:
+    data_request = DataRequest(request.args.get('latitude_start'),request.args.get('latitude_end'),
+                               request.args.get('logitude_start'),request.args.get('logitude_end'),
+                               request.args.get('time_start'),request.args.get('time_end'),request.args.get('interval', 2),
+                               request.args.get('variables', "").replace(" ", "").split(","))
+    if not data_request.is_valid():
         return Response(status=400)
-    wave_and_wind_vars, curr_vars, tide_vars = parse_variables(request_vars)
-    time_start = datetime.fromtimestamp(epoch_time_start).date()
-    time_end = datetime.fromtimestamp(epoch_time_end).date()
-    data = {
-        "longitude_start": float(logitude_start),
-        "longitude_end": float(logitude_end),
-        "latitude_start": float(latitude_start),
-        "latitude_end": float(latitude_end),
-        "time_start": str(time_start),
-        "time_end": str(str(time_end))
-    }
-    waves_and_wind, tides, currents = None, None, None, None
+    waves_and_wind, tides, currents = None, None, None
     res = {}
     if len(wave_and_wind_vars) > 0:
         waves_and_wind = fetch_wave_and_wind(data, wave_and_wind_vars).tolist()
