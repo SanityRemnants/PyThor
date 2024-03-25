@@ -58,8 +58,8 @@ class Fetcher:
         forecast_hour = self.map_hour(now.hour)
 
         url = (
-                "https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/gfs." +
-                now.strftime("%Y%m%d") + "/" + forecast_hour + "/wave/gridded/"
+                "https://nomads.ncep.noaa.gov/cgi-bin/filter_gfswave.pl?dir=%2Fgfs" +
+                now.strftime("%Y%m%d") + "%2F" + forecast_hour + "%2Fwave%2Fgridded&file="
                                                                "gfswave.t" + forecast_hour + "z.global.0p25.f000.grib2" + self.__request.parse_for_noaa()
         )
 
