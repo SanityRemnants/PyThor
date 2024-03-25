@@ -82,15 +82,15 @@ class DataRequest:
         return result
 
     def is_valid(self):
-        if not (-180.0 <= self.__longitude.start <= 180.0):
+        if not (-180.0 <= float(self.__longitude.start) <= 180.0):
             return False
-        if not (-180.0 <= self.__longitude.end <= 180.0):
+        if not (-180.0 <= float(self.__longitude.end) <= 180.0):
             return False
-        if not (-90.0 <= self.__latitude.start <= 90.0):
+        if not (-90.0 <= float(self.__latitude.start) <= 90.0):
             return False
-        if not (-90.0 <= self.__latitude.end <= 90.0):
+        if not (-90.0 <= float(self.__latitude.end) <= 90.0):
             return False
-        if self.__latitude.start < self.__latitude.end:
+        if float(self.__latitude.start) < float(self.__latitude.end):
             return False
         if self.__time is None:
             return False
