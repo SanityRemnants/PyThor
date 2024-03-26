@@ -25,8 +25,7 @@ def root():  # put application's code here
                                request.args.get('variables', "").replace(" ", "").split(","))
     if not data_request.is_valid():
         return Response(status=400)
-    fetcher = Fetcher(data_request)
-    return fetcher.fetch()
+    return Fetcher(data_request).fetch()
 
 
 if __name__ == '__main__':

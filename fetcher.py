@@ -57,7 +57,8 @@ class Fetcher:
         now = datetime.now().astimezone(pytz.timezone('America/New_York'))
         res = {}
         time_start, time_end = self.__request.get_time()
-        time_start, time_end = time_start.astimezone(pytz.timezone('America/New_York')), time_end.astimezone(pytz.timezone('America/New_York'))
+        time_start, time_end = time_start.astimezone(pytz.timezone('America/New_York')), time_end.astimezone(
+            pytz.timezone('America/New_York'))
         time = time_start
         i = 0
         j = 0
@@ -75,13 +76,12 @@ class Fetcher:
                 print(h)
             else:
 
-
                 forecast_hour = self.map_hour(now.hour)
 
                 url = (
                         "https://nomads.ncep.noaa.gov/cgi-bin/filter_gfswave.pl?dir=%2Fgfs." +
                         now.strftime("%Y%m%d") + "%2F" + forecast_hour + "%2Fwave%2Fgridded&file="
-                                                                          "gfswave.t" + forecast_hour +
+                                                                         "gfswave.t" + forecast_hour +
                         "z.global.0p25.f" + h + ".grib2" + self.__request.parse_for_noaa()
                 )
                 print(forecast_hour)
