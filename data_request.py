@@ -67,9 +67,9 @@ class DataRequest:
     def parse_for_copernicus_currents(self):
         result = {
             "dataset_id": "cmems_mod_glo_phy-cur_anfc_0.083deg_PT6H-i",
-            "longitude": [str(self.__longitude.start), str(self.__longitude.end)],
-            "latitude": [str(self.__latitude.start), str(self.__latitude.end)],
-            "time": [self.__time.start.date(), self.__time.end.date()],
+            "longitude": [self.__longitude.start, self.__longitude.end],
+            "latitude": [self.__latitude.start, self.__latitude.end],
+            "time": [self.__time.start, self.__time.end],
             "variables": self.currents_variables
         }
         return result
@@ -77,9 +77,9 @@ class DataRequest:
     def parse_for_copernicus_tide(self):
         result = {
             "dataset_id": "cmems_mod_glo_phy_anfc_0.083deg_PT1H-m",
-            "longitude": [str(self.__longitude.start), str(self.__longitude.end)],
-            "latitude": [str(self.__latitude.start), str(self.__latitude.end)],
-            "time": [self.__time.start.date(), self.__time.end.date()],
+            "longitude": [self.__longitude.start, self.__longitude.end],
+            "latitude": [self.__latitude.start, self.__latitude.end],
+            "time": [self.__time.start, self.__time.end],
             "variables": self.tide_variables
         }
         return result
