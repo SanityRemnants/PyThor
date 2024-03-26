@@ -26,6 +26,7 @@ class Fetcher:
         for key in forecast_hours:
             if key[0] <= hour <= key[1]:
                 return forecast_hours[key]
+
     def fetch_currents(self):
         data_request = self.__request.parse_for_copernicus_currents()
         sst_l3s = copernicusmarine.open_dataset(
@@ -60,30 +61,32 @@ class Fetcher:
         url = (
                 "https://nomads.ncep.noaa.gov/cgi-bin/filter_gfswave.pl?dir=%2Fgfs." +
                 time_start.strftime("%Y%m%d") + "%2F" + forecast_hour + "%2Fwave%2Fgridded&file="
-                                                               "gfswave.t" + forecast_hour + "z.global.0p25.f000.grib2" + self.__request.parse_for_noaa()
+                                                                        "gfswave.t" + forecast_hour + "z.global.0p25.f000.grib2" + self.__request.parse_for_noaa()
         )
 
         filename = "ww" + time_start.strftime("%Y%m%d") + forecast_hour + ".grib2"
         try:
             urlretrieve(url, filename)
             wave_unproccessed = xr.load_dataset(filename, engine='cfgrib')
+            res = {}
             for v in wave_unproccessed:
+                res[v] = wave_unproccessed[v].values.tolist()
                 print("{}, {}, {}".format(
                     v, wave_unproccessed[v].attrs["long_name"], wave_unproccessed[v].attrs["units"]))
-            return wave_unproccessed["swh"].values
+
+            return res
+
         except Exception as e:
             return str(e)
-
 
     def fetch(self):
         waves_and_wind, tides, currents = None, None, None
         res = {}
         if len(self.__request.noaa_variables) > 0:
             fetched_value = self.fetch_wave_and_wind()
-            if fetched_value is not str:
-                waves_and_wind = fetched_value.tolist()
-            else:
-                waves_and_wind = fetched_value
+
+            waves_and_wind = fetched_value
+
         if len(self.__request.tide_variables) > 0:
             tides = self.fetch_tide().to_dict()
         if len(self.__request.currents_variables) > 0:
