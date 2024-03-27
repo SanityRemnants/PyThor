@@ -64,6 +64,9 @@ class DataRequest:
         time_end = self.__time.end
         return time_start, time_end
 
+    def get_coordinates(self):
+        return {"longitude":[self.__longitude.start,self.__longitude.end],"latitude":[self.__latitude.start,self.__latitude.end]}
+
     def parse_for_copernicus_currents(self):
         result = {
             "dataset_id": "cmems_mod_glo_phy-cur_anfc_0.083deg_PT6H-i",

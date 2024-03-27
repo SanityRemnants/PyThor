@@ -1,7 +1,10 @@
+import numpy
+import scipy.interpolate
 from flask import Flask, request, Response
 import copernicusmarine
 from data_request import DataRequest
 from fetcher import Fetcher
+import scipy.interpolate as sci
 
 import yaml
 
@@ -25,8 +28,22 @@ def root():  # put application's code here
                                request.args.get('variables', "").replace(" ", "").split(","))
     if not data_request.is_valid():
         return Response(status=400)
-    return Fetcher(data_request).fetch()
+    result = Fetcher(data_request).fetch()
 
+    wave_wind_not_inter = result["waves_and_wind"]
+    lat = numpy.array(wave_wind_not_inter["latitude"])
+    lon = numpy.array(wave_wind_not_inter["longitude"])
+    dirpw = numpy.array(wave_wind_not_inter["dirpw"])
+    coords = data_request.get_coordinates()
+    lat_inter = numpy.arange(lat[0],lat[-1],0.1)
+    lon_inter = numpy.arange(lon[0],lon[-1],0.1)
+    result["dirpw_inter"] = [[[0]*len(lon_inter)]*len(lat_inter)]
+    interpolate = scipy.interpolate.RegularGridInterpolator((numpy.array([1]),lat,lon),dirpw)
+    for i in range(len(lat_inter)):
+        for j in range(len(lon_inter)):
+            print(1.,lat_inter[i],lon_inter[j])
+            result["dirpw_inter"][0][i][j] = interpolate([1.,lat_inter[i],lon_inter[j]])[0]
+    return  {"inter":result["dirpw_inter"],"normal":result["waves_and_wind"]["dirpw"],"lat":lat.tolist(),"lat_inter":lat_inter.tolist(),"lon":lon.tolist(),"lon_inter":lon_inter.tolist()}
 
 if __name__ == '__main__':
     '''_ = copernicusmarine.open_dataset(dataset_id="cmems_mod_glo_phy-cur_anfc_0.083deg_PT6H-i", username=USERNAME,

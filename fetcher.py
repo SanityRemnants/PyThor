@@ -92,7 +92,8 @@ class Fetcher:
             try:
                 urlretrieve(url, filename)
                 wave_unproccessed = xr.load_dataset(filename, engine='cfgrib')
-
+                res["longitude"] = wave_unproccessed["longitude"].values.tolist()
+                res["latitude"] = wave_unproccessed["latitude"].values.tolist()
                 for v in wave_unproccessed:
 
                     print("{}, {}, {}".format(
@@ -113,10 +114,7 @@ class Fetcher:
         waves_and_wind, tides, currents = None, None, None
         res = {}
         if len(self.__request.noaa_variables) > 0:
-            fetched_value = self.fetch_wave_and_wind()
-
-            waves_and_wind = fetched_value
-
+            waves_and_wind = self.fetch_wave_and_wind()
         if len(self.__request.tide_variables) > 0:
             tides = self.fetch_tide().to_dict()
         if len(self.__request.currents_variables) > 0:
