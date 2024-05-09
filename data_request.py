@@ -47,8 +47,12 @@ class DataRequest:
         self.noaa_variables, self.currents_variables, self.tide_variables = self.__parse_variables(variables)
 
     def parse_for_noaa(self):
-        left = self.__longitude.start + 180.0
+        left = self.__longitude.start
+        if left < 0:
+            left = 180 + (180 + left)
         right = self.__longitude.end + 180.0
+        if right < 0:
+            right = 180 + (180 + right)
         if right < left:
             right = 360 + right
         result = "&lev_surface=on&subregion=&toplat=" + str(self.__latitude.end) \
