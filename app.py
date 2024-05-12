@@ -1,10 +1,10 @@
 import json
 
-import numpy
+import numpy as np
 import scipy.interpolate
 from flask import Flask, request, Response
 import copernicusmarine
-from scipy.interpolate import griddata
+from scipy.interpolate import griddata, SmoothSphereBivariateSpline, RegularGridInterpolator
 
 from data_request import DataRequest
 from fetcher import Fetcher
@@ -37,48 +37,77 @@ def root():  # put application's code here
     # return result
 
     wave_wind_not_inter = result["waves_and_wind"]
-    lat = numpy.array(wave_wind_not_inter["latitude"])
-    lon = numpy.array(wave_wind_not_inter["longitude"])
-    time = numpy.array(wave_wind_not_inter["time"])
-    dirpw = numpy.array(wave_wind_not_inter["dirpw"])
+    lat = np.array(wave_wind_not_inter["latitude"])
+    lon = np.array(wave_wind_not_inter["longitude"])
+    time = np.array(wave_wind_not_inter["time"])
+
     coords = data_request.get_coordinates()
-    lat_inter = numpy.arange(lat[0], lat[-1], 0.1)
-    lon_inter = numpy.arange(lon[0], lon[-1], 0.1)
+    lat_inter = np.arange(lat[0], lat[-1], 0.1)
+    lon_inter = np.arange(lon[0], lon[-1], 0.1)
     if time[0] != time[-1]:
-        time_inter = numpy.arange(time[0], time[-1], 10800)
+        time_inter = np.arange(time[0], time[-1], 10800)
     else:
         time_inter = time
     result["dirpw_inter"] = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in range(len(time_inter))]
 
-    interpolator = scipy.interpolate.RegularGridInterpolator((time, lat, lon), dirpw)
 
+    dirpw = np.array(wave_wind_not_inter["dirpw"])
+
+
+    lat_rad = np.deg2rad(lat)
+    lon_rad = np.deg2rad(lon)
+    lon_rad = np.where(lon_rad < 0, lon_rad + 2*np.pi, lon_rad)
+
+
+
+
+    lon_rad_inter = np.deg2rad(lon_inter)
+    lat_rad_inter = np.deg2rad(lat_inter)
+    lon_rad_inter = np.where(lon_rad_inter < 0, lon_rad_inter + 2 * np.pi, lon_rad_inter)
+
+    lon_grid, lat_grid = np.meshgrid(lon_rad, lat_rad)
+    res = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in range(len(time))]
+    for k in range(len(time)):
+
+        nan_mask = np.isnan(dirpw[k])
+        lat_rad_valid = lat_grid[~nan_mask]
+        lon_rad_valid = lon_grid[~nan_mask]
+        data_points_valid = dirpw[k][~nan_mask].T.ravel()
+        interp_spatial = SmoothSphereBivariateSpline(lat_rad_valid.ravel(), lon_rad_valid.ravel(), data_points_valid, s = len(data_points_valid)**3)
+
+        res[k] = interp_spatial(lat_rad_inter, lon_rad_inter)
+
+    interpolator = RegularGridInterpolator((time, lat_inter, lon_inter), res)
     for k in range(len(time_inter)):
+        # Interpolacja wzdłuż czasu
         for i in range(len(lat_inter)):
             for j in range(len(lon_inter)):
                 result["dirpw_inter"][k][i][j] = interpolator([time_inter[k], lat_inter[i], lon_inter[j]])
+
     dirpw_inter_list = [[[float(value[0]) for value in row] for row in slice_] for slice_ in result["dirpw_inter"]]
     return {"inter":dirpw_inter_list,"time_inter":time_inter.tolist(),"time":time.tolist(),"normal":result["waves_and_wind"]["dirpw"],"lat":lat.tolist(),"lat_inter":lat_inter.tolist(),"lon":lon.tolist(),"lon_inter":lon_inter.tolist()}
     '''
-    lon_min = numpy.array(wave_wind_not_inter["longitude"])[0]
-    lon_max = numpy.array(wave_wind_not_inter["longitude"])[-1]
-    lat_min = numpy.array(wave_wind_not_inter["latitude"])[0]
-    lat_max = numpy.array(wave_wind_not_inter["latitude"])[-1]
-    time_min = numpy.array(wave_wind_not_inter["time"])[0]
-    time_max = numpy.array(wave_wind_not_inter["time"])[-1]
+    
+    lon_min = np.array(wave_wind_not_inter["longitude"])[0]
+    lon_max = np.array(wave_wind_not_inter["longitude"])[-1]
+    lat_min = np.array(wave_wind_not_inter["latitude"])[0]
+    lat_max = np.array(wave_wind_not_inter["latitude"])[-1]
+    time_min = np.array(wave_wind_not_inter["time"])[0]
+    time_max = np.array(wave_wind_not_inter["time"])[-1]
 
-    dirpw = numpy.array(wave_wind_not_inter["dirpw"])
-    maska = numpy.isnan(dirpw)
-    punkty = numpy.argwhere(~maska)
+    dirpw = np.array(wave_wind_not_inter["dirpw"])
+    maska = np.isnan(dirpw)
+    punkty = np.argwhere(~maska)
     wartosci = dirpw[~maska]
     nowa_rozdzielczosc = 2
-    z_interp, y_interp, x_interp = numpy.meshgrid(
-        numpy.linspace(time_min, time_max, int(nowa_rozdzielczosc * (time_max - time_min) + 1)),
-        numpy.linspace(lat_min, lat_max, int(nowa_rozdzielczosc * (lat_max - lat_min) + 1)),
-        numpy.linspace(lon_min, lon_max, int(nowa_rozdzielczosc * (lon_max - lon_min) + 1)))
+    z_interp, y_interp, x_interp = np.meshgrid(
+        np.linspace(time_min, time_max, int(nowa_rozdzielczosc * (time_max - time_min) + 1)),
+        np.linspace(lat_min, lat_max, int(nowa_rozdzielczosc * (lat_max - lat_min) + 1)),
+        np.linspace(lon_min, lon_max, int(nowa_rozdzielczosc * (lon_max - lon_min) + 1)))
 
     dane_zinterpolowane = griddata(punkty, wartosci, (z_interp, y_interp, x_interp), method='linear')
-    return dane_zinterpolowane
-'''
+    return dane_zinterpolowane'''
+
 
 if __name__ == '__main__':
     '''_ = copernicusmarine.open_dataset(dataset_id="cmems_mod_glo_phy-cur_anfc_0.083deg_PT6H-i", username=USERNAME,
