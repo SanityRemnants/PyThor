@@ -48,17 +48,25 @@ def root():  # put application's code here
         time_inter = np.arange(time[0], time[-1], 10800)
     else:
         time_inter = time
-    result["dirpw_inter"] = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in range(len(time_inter))]
 
+    keys_to_check = ["dirpw", "swh", "perpw", "u", "v", "ws"]
+    keys = []
+    weather = {}
+    normal = {}
+    for key in keys_to_check:
+        if key in wave_wind_not_inter:
+            keys.append(key)
+            key_inter = key + "_inter"
+            weather[key] = np.array(wave_wind_not_inter[key])
+            result[key_inter] = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in
+                                     range(len(time_inter))]
 
-    dirpw = np.array(wave_wind_not_inter["dirpw"])
-
+    normal = {key: value.tolist() if isinstance(value, np.ndarray) else value for key, value in
+              weather.items()}
 
     lat_rad = np.deg2rad(lat)
     lon_rad = np.deg2rad(lon)
     lon_rad = np.where(lon_rad < 0, lon_rad + 2*np.pi, lon_rad)
-
-
 
 
     lon_rad_inter = np.deg2rad(lon_inter)
@@ -67,25 +75,38 @@ def root():  # put application's code here
 
     lon_grid, lat_grid = np.meshgrid(lon_rad, lat_rad)
     res = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in range(len(time))]
-    for k in range(len(time)):
+    for key in keys:
+        for k in range(len(time)):
+            elem = weather[key]
+            nan_mask = np.isnan(elem[k])
+            indices = np.where(~nan_mask)
+            lat_rad_valid = lat_grid[~nan_mask]
+            lon_rad_valid = lon_grid[~nan_mask]
+            data_points_valid = elem[k][indices].T.ravel()
+            interp_spatial = SmoothSphereBivariateSpline(lat_rad_valid.ravel(), lon_rad_valid.ravel(), data_points_valid, s = len(data_points_valid)**3)
 
-        nan_mask = np.isnan(dirpw[k])
-        lat_rad_valid = lat_grid[~nan_mask]
-        lon_rad_valid = lon_grid[~nan_mask]
-        data_points_valid = dirpw[k][~nan_mask].T.ravel()
-        interp_spatial = SmoothSphereBivariateSpline(lat_rad_valid.ravel(), lon_rad_valid.ravel(), data_points_valid, s = len(data_points_valid)**3)
+            res[k] = interp_spatial(lat_rad_inter, lon_rad_inter)
 
-        res[k] = interp_spatial(lat_rad_inter, lon_rad_inter)
+        interpolator = RegularGridInterpolator((time, lat_inter, lon_inter), res)
+        key_inter = key + "_inter"
+        for k in range(len(time_inter)):
+            # Interpolacja wzdłuż czasu
+            for i in range(len(lat_inter)):
+                for j in range(len(lon_inter)):
 
-    interpolator = RegularGridInterpolator((time, lat_inter, lon_inter), res)
-    for k in range(len(time_inter)):
-        # Interpolacja wzdłuż czasu
-        for i in range(len(lat_inter)):
-            for j in range(len(lon_inter)):
-                result["dirpw_inter"][k][i][j] = interpolator([time_inter[k], lat_inter[i], lon_inter[j]])
+                    result[key_inter][k][i][j] = interpolator([time_inter[k], lat_inter[i], lon_inter[j]])
 
-    dirpw_inter_list = [[[float(value[0]) for value in row] for row in slice_] for slice_ in result["dirpw_inter"]]
-    return {"inter":dirpw_inter_list,"time_inter":time_inter.tolist(),"time":time.tolist(),"normal":result["waves_and_wind"]["dirpw"],"lat":lat.tolist(),"lat_inter":lat_inter.tolist(),"lon":lon.tolist(),"lon_inter":lon_inter.tolist()}
+        weather[key] = [[[float(value[0]) for value in row] for row in slice_] for slice_ in result[key_inter]]
+    weather["time_inter"] = time_inter.tolist()
+    weather["time"] = time.tolist()
+
+    weather["normal"] = normal
+    weather["lat"] = lat.tolist()
+    weather["lon"] = lon.tolist()
+    weather["lat_inter"] = lat_inter.tolist()
+    weather["lon_inter"] = lon_inter.tolist()
+
+    return weather
     '''
     
     lon_min = np.array(wave_wind_not_inter["longitude"])[0]
