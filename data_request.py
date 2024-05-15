@@ -50,7 +50,7 @@ class DataRequest:
         left = self.__longitude.start
         if left < 0:
             left = 180 + (180 + left)
-        right = self.__longitude.end + 180.0
+        right = self.__longitude.end
         if right < 0:
             right = 180 + (180 + right)
         if right < left:
