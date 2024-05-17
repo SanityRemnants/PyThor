@@ -4,7 +4,7 @@ import numpy as np
 import scipy.interpolate
 from flask import Flask, request, Response
 import copernicusmarine
-from scipy.interpolate import griddata, SmoothSphereBivariateSpline, RegularGridInterpolator
+from scipy.interpolate import griddata, SmoothSphereBivariateSpline, RegularGridInterpolator, Rbf
 
 from data_request import DataRequest
 from fetcher import Fetcher
@@ -21,6 +21,15 @@ with open("config.yaml", "r") as f:
 
 # Import modules
 app = Flask(__name__)
+
+
+def spherical_to_cartesian(lat, lon, r=1):
+    lat_rad = np.deg2rad(lat)
+    lon_rad = np.deg2rad(lon)
+    x = r * np.cos(lat_rad) * np.cos(lon_rad)
+    y = r * np.cos(lat_rad) * np.sin(lon_rad)
+    z = r * np.sin(lat_rad)
+    return x, y, z
 
 
 @app.route('/api/weather')
@@ -58,39 +67,49 @@ def root():  # put application's code here
             keys.append(key)
             key_inter = key + "_inter"
             weather[key] = np.array(wave_wind_not_inter[key])
-            weather[key+"_mask"] = np.isin(weather[key],[np.nan]).astype(float)
-            print(weather[key+"_mask"])
-            keys.append(key+"_mask")
+            weather[key + "_mask"] = np.isin(weather[key], [np.nan]).astype(float)
+            print(weather[key + "_mask"])
+            keys.append(key + "_mask")
             result[key_inter] = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in
-                                     range(len(time_inter))]
-            result[key+"_mask"+ "_inter"] = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in
                                  range(len(time_inter))]
+            result[key + "_mask" + "_inter"] = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in
+                                                range(len(time_inter))]
 
     normal = {key: value.tolist() if isinstance(value, np.ndarray) else value for key, value in
               weather.items()}
 
     lat_rad = np.deg2rad(lat)
     lon_rad = np.deg2rad(lon)
-    lon_rad = np.where(lon_rad < 0, lon_rad + 2*np.pi, lon_rad)
-
+    lon_rad = np.where(lon_rad < 0, lon_rad + 2 * np.pi, lon_rad)
 
     lon_rad_inter = np.deg2rad(lon_inter)
     lat_rad_inter = np.deg2rad(lat_inter)
     lon_rad_inter = np.where(lon_rad_inter < 0, lon_rad_inter + 2 * np.pi, lon_rad_inter)
 
-    lon_grid, lat_grid = np.meshgrid(lon_rad, lat_rad)
+    lon_grid, lat_grid = np.meshgrid(lon, lat)
+    lon_inter_grid, lat_inter_grid = np.meshgrid(lon_inter, lat_inter)
     res = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in range(len(time))]
     for key in keys:
         for k in range(len(time)):
             elem = weather[key]
             nan_mask = np.isnan(elem[k])
             indices = np.where(~nan_mask)
-            lat_rad_valid = lat_grid[~nan_mask]
-            lon_rad_valid = lon_grid[~nan_mask]
-            data_points_valid = elem[k][indices].T.ravel()
-            interp_spatial = SmoothSphereBivariateSpline(lat_rad_valid.ravel(), lon_rad_valid.ravel(), data_points_valid, s = len(data_points_valid)**3)
+            nan_mask_flat = nan_mask.ravel()
 
-            res[k] = interp_spatial(lat_rad_inter, lon_rad_inter)
+            data_points_valid = elem[k][indices]
+            lat_valid = lat_grid[~nan_mask]
+            lon_valid = lon_grid[~nan_mask]
+            x, y, z = spherical_to_cartesian(lat_valid.ravel(), lon_valid.ravel())
+
+
+            nxest = 2 * len(np.unique(lon_rad))  # Na przykład podwojenie liczby unikalnych wartości długości
+            nyest = 2 * len(np.unique(lat_rad))
+            interp_spatial = Rbf(x, y, z, data_points_valid, function='thin_plate', smooth=0)
+
+            #interp_spatial = SmoothSphereBivariateSpline(lat_rad_valid.ravel(), lon_rad_valid.ravel(),
+            #                                             data_points_valid)
+            x_inter, y_inter, z_inter = spherical_to_cartesian(lat_inter_grid, lon_inter_grid)
+            res[k] = interp_spatial(x_inter, y_inter, z_inter)
 
         interpolator = RegularGridInterpolator((time, lat_inter, lon_inter), res)
         key_inter = key + "_inter"
@@ -98,14 +117,13 @@ def root():  # put application's code here
             # Interpolacja wzdłuż czasu
             for i in range(len(lat_inter)):
                 for j in range(len(lon_inter)):
-
                     result[key_inter][k][i][j] = interpolator([time_inter[k], lat_inter[i], lon_inter[j]])
 
         weather[key] = [[[float(value[0]) for value in row] for row in slice_] for slice_ in result[key_inter]]
     keys_to_iter = deepcopy(list(weather.keys()))
     for k in keys_to_iter:
         if "mask" in k:
-            key_to_nan = k.replace("_mask","")
+            key_to_nan = k.replace("_mask", "")
             for t in range(len(weather[key_to_nan])):
                 for l in range(len(weather[key_to_nan][t])):
                     for lt in range(len(weather[key_to_nan][t][l])):
