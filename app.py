@@ -67,9 +67,9 @@ def root():  # put application's code here
             keys.append(key)
             key_inter = key + "_inter"
             weather[key] = np.array(wave_wind_not_inter[key])
-            weather[key + "_mask"] = np.isin(weather[key], [np.nan]).astype(float)
-            print(weather[key + "_mask"])
-            keys.append(key + "_mask")
+            weather[key+"_mask"] = np.isnan(weather[key]).astype(float)
+            print(weather[key+"_mask"])
+            keys.append(key+"_mask")
             result[key_inter] = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in
                                  range(len(time_inter))]
             result[key + "_mask" + "_inter"] = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in
