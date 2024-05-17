@@ -1,5 +1,5 @@
 import json
-
+from copy import deepcopy
 import numpy as np
 import scipy.interpolate
 from flask import Flask, request, Response
@@ -58,8 +58,13 @@ def root():  # put application's code here
             keys.append(key)
             key_inter = key + "_inter"
             weather[key] = np.array(wave_wind_not_inter[key])
+            weather[key+"_mask"] = np.isin(weather[key],[np.nan]).astype(float)
+            print(weather[key+"_mask"])
+            keys.append(key+"_mask")
             result[key_inter] = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in
                                      range(len(time_inter))]
+            result[key+"_mask"+ "_inter"] = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in
+                                 range(len(time_inter))]
 
     normal = {key: value.tolist() if isinstance(value, np.ndarray) else value for key, value in
               weather.items()}
@@ -97,6 +102,16 @@ def root():  # put application's code here
                     result[key_inter][k][i][j] = interpolator([time_inter[k], lat_inter[i], lon_inter[j]])
 
         weather[key] = [[[float(value[0]) for value in row] for row in slice_] for slice_ in result[key_inter]]
+    keys_to_iter = deepcopy(list(weather.keys()))
+    for k in keys_to_iter:
+        if "mask" in k:
+            key_to_nan = k.replace("_mask","")
+            for t in range(len(weather[key_to_nan])):
+                for l in range(len(weather[key_to_nan][t])):
+                    for lt in range(len(weather[key_to_nan][t][l])):
+                        if weather[k][t][l][lt] >= 0.6:
+                            weather[key_to_nan][t][l][lt] = np.NaN
+            weather.pop(k)
     weather["time_inter"] = time_inter.tolist()
     weather["time"] = time.tolist()
 
