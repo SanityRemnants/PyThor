@@ -102,9 +102,9 @@ def root():  # put application's code here
             for t in range(len(weather[key_to_nan])):
                 for l in range(len(weather[key_to_nan][t])):
                     for lt in range(len(weather[key_to_nan][t][l])):
-                        if weather[k][t][l][lt] >= 0.6:
+                        if weather[k][t][l][lt] >= 0.5:
                             weather[key_to_nan][t][l][lt] = np.NaN
-            weather.pop(k)
+            #weather.pop(k)
     weather["time_inter"] = time_inter.tolist()
     weather["time"] = time.tolist()
 
