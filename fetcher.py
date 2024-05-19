@@ -5,8 +5,15 @@ import pytz
 import yaml
 from datetime import datetime, timedelta
 import time
+import os
+import atexit
 
 import data_request as dr
+
+
+def rm_file(file_name):
+    os.remove(file_name)
+    os.remove(file_name + ".923a8.idx")
 
 
 class Fetcher:
@@ -71,7 +78,7 @@ class Fetcher:
                 url = (
                         "https://nomads.ncep.noaa.gov/cgi-bin/filter_gfswave.pl?dir=%2Fgfs." +
                         forecast_time.strftime("%Y%m%d") + "%2F" + forecast_hour + "%2Fwave%2Fgridded&file="
-                                                                          "gfswave.t" + forecast_hour +
+                                                                                   "gfswave.t" + forecast_hour +
                         "z.global.0p25.f000.grib2" + self.__request.parse_for_noaa()
                 )
                 print(forecast_hour)
@@ -91,6 +98,7 @@ class Fetcher:
                 j = j + 1
 
             filename = "ww" + forecast_time.strftime("%Y%m%d") + forecast_hour + str(j) + ".grib2"
+            atexit.register(rm_file, filename)
             try:
                 urlretrieve(url, filename)
                 wave_unproccessed = xr.load_dataset(filename, engine='cfgrib')
