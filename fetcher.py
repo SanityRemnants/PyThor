@@ -11,7 +11,7 @@ import atexit
 import data_request as dr
 
 
-def rm_file(file_name):
+def rm_grib_files(file_name):
     os.remove(file_name)
     os.remove(file_name + ".923a8.idx")
 
@@ -98,7 +98,7 @@ class Fetcher:
                 j = j + 1
 
             filename = "ww" + forecast_time.strftime("%Y%m%d") + forecast_hour + str(j) + ".grib2"
-            atexit.register(rm_file, filename)
+            atexit.register(rm_grib_files, filename)
             try:
                 urlretrieve(url, filename)
                 wave_unproccessed = xr.load_dataset(filename, engine='cfgrib')
