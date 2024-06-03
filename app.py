@@ -24,7 +24,7 @@ app = Flask(__name__)
 @app.route('/api/weather')
 def root():  # put application's code here
     data_request = DataRequest(request.args.get('latitude_start'), request.args.get('latitude_end'),
-                               request.args.get('logitude_start'), request.args.get('logitude_end'),
+                               request.args.get('longitude_start'), request.args.get('longitude_end'),
                                request.args.get('time_start'), request.args.get('time_end'),
                                request.args.get('interval', 2),
                                request.args.get('variables', "").replace(" ", "").split(","))
