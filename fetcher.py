@@ -12,8 +12,12 @@ import data_request as dr
 
 
 def rm_grib_files(file_name):
-    os.remove(file_name)
-    os.remove(file_name + ".923a8.idx")
+    try:
+        os.remove(file_name)
+        os.remove(file_name + ".923a8.idx")
+    except FileNotFoundError:
+        return
+
 
 
 class Fetcher:
