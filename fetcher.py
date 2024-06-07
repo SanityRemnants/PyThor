@@ -1,4 +1,6 @@
 from urllib.request import urlretrieve
+
+import numpy as np
 import xarray as xr
 import copernicusmarine
 import pytz
@@ -75,20 +77,25 @@ class Fetcher:
         i = 0
         j = 0
         time_data = []
+        forecast_hour = None
         while forecast_time <= time_end:
-            h = '{:03d}'.format(j * 6)
+
             if forecast_time <= now:
+
+
                 forecast_hour = self.map_hour(forecast_time.hour)
+                j = forecast_time.hour % 6
+                h = '{:03d}'.format(j)
                 url = (
                         "https://nomads.ncep.noaa.gov/cgi-bin/filter_gfswave.pl?dir=%2Fgfs." +
                         forecast_time.strftime("%Y%m%d") + "%2F" + forecast_hour + "%2Fwave%2Fgridded&file="
                                                                                    "gfswave.t" + forecast_hour +
-                        "z.global.0p25.f000.grib2" + self.__request.parse_for_noaa()
+                        "z.global.0p25.f" + h + ".grib2" + self.__request.parse_for_noaa()
                 )
                 print(forecast_hour)
                 print(h)
             else:
-
+                h = '{:03d}'.format(j)
                 forecast_hour = self.map_hour(now.hour)
 
                 url = (
@@ -99,7 +106,7 @@ class Fetcher:
                 )
                 print(forecast_hour)
                 print(h)
-                j = j + 1
+
 
             filename = "ww" + forecast_time.strftime("%Y%m%d") + forecast_hour + str(j) + ".grib2"
             atexit.register(rm_grib_files, filename)
@@ -108,7 +115,11 @@ class Fetcher:
                 wave_unproccessed = xr.load_dataset(filename, engine='cfgrib')
                 res["longitude"] = wave_unproccessed["longitude"].values.tolist()
                 res["latitude"] = wave_unproccessed["latitude"].values.tolist()
-                time_data.append(wave_unproccessed["time"].values)
+                t = wave_unproccessed["time"].values
+                t = int(t.astype('datetime64[s]').astype('int64'))
+                t = t + 3600 * j
+                time_data.append(t)
+                j = j + 1
 
                 for v in wave_unproccessed:
 
@@ -123,11 +134,10 @@ class Fetcher:
                 return str(e)
 
             i = i + 1
-            forecast_time = forecast_time + timedelta(hours=6)
+            forecast_time = forecast_time + timedelta(hours=1)
         res["time"] = []
         for e in time_data:
-            e = e.astype('datetime64[s]')
-            res["time"].append(int(e.astype('int64')))
+            res["time"].append(e)
 
         return res
 
