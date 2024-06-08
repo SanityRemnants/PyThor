@@ -18,8 +18,8 @@ def interpolate(result):
     lat = np.array(wave_wind_not_inter["latitude"])
     lon = np.array(wave_wind_not_inter["longitude"])
     time = np.array(wave_wind_not_inter["time"])
-    lat_inter = np.arange(lat[0], lat[-1], 0.1)
-    lon_inter = np.arange(lon[0], lon[-1], 0.1)
+    lat_inter = np.arange(lat[0], lat[-1], 0.01)
+    lon_inter = np.arange(lon[0], lon[-1], 0.01)
     if time[0] != time[-1]:
         time_inter = np.arange(time[0], time[-1], 10800)
     else:
@@ -78,15 +78,15 @@ def interpolate(result):
             for t in range(len(weather[key_to_nan])):
                 for l in range(len(weather[key_to_nan][t])):
                     for lt in range(len(weather[key_to_nan][t][l])):
-                        if weather[k][t][l][lt] >= 0.5:
+                        if weather[k][t][l][lt] >= 0.7:
                             weather[key_to_nan][t][l][lt] = np.NaN
             # weather.pop(k)
     weather["time_inter"] = time_inter.tolist()
-    weather["time"] = time.tolist()
+    # weather["time"] = time.tolist()
 
-    weather["normal"] = normal
-    weather["lat"] = lat.tolist()
-    weather["lon"] = lon.tolist()
+    # weather["normal"] = normal
+    # weather["lat"] = lat.tolist()
+    # weather["lon"] = lon.tolist()
     weather["lat_inter"] = lat_inter.tolist()
     weather["lon_inter"] = lon_inter.tolist()
 
