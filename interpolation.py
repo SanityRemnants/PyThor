@@ -13,8 +13,8 @@ def spherical_to_cartesian(lat, lon, r=1):
     return x, y, z
 
 
-def interpolate(result):
-    resoution = 0.05
+def interpolate(result,interval):
+    resoution = 0.15
     land_treshhold = 0.5
     wave_wind_not_inter = result["waves_and_wind"]
     lat = np.array(wave_wind_not_inter["latitude"])
@@ -23,7 +23,7 @@ def interpolate(result):
     lat_inter = np.arange(lat[0], lat[-1], resoution)
     lon_inter = np.arange(lon[0], lon[-1], resoution)
     if time[0] != time[-1]:
-        time_inter = np.arange(time[0], time[-1], 10800)
+        time_inter = np.arange(time[0], time[-1], int(interval*3600))
     else:
         time_inter = time
 

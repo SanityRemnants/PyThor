@@ -33,7 +33,7 @@ def root():  # put application's code here
     result = Fetcher(data_request).fetch()
 
     wave_wind_not_inter = result["waves_and_wind"]
-    res = interpolate(result)
+    res = interpolate(result,data_request.get_time_interval())
     return res
 
 
