@@ -72,7 +72,7 @@ class DataRequest:
         return {"longitude":[self.__longitude.start,self.__longitude.end],"latitude":[self.__latitude.start,self.__latitude.end]}
 
     def get_time_interval(self):
-        return  self.__time_interval
+        return self.__time_interval
 
     def parse_for_copernicus_currents(self):
         result = {
