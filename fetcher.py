@@ -116,10 +116,7 @@ class Fetcher:
                 res["longitude"] = wave_unproccessed["longitude"].values.tolist()
                 res["latitude"] = wave_unproccessed["latitude"].values.tolist()
                 t = wave_unproccessed["time"].values
-                if isinstance(t, datetime):
-                    t = datetime.timestamp(t)
-                else:
-                    raise "exception"
+                t = int(t.astype('datetime64[s]').astype('int64'))
                 t = t + 3600 * j
                 time_data.append(t)
                 j = j + 1
