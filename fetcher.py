@@ -85,76 +85,110 @@ class Fetcher:
             variables=data_request["variables"], username=self.USERNAME, password=self.PASSWORD)
         return tide
 
+    def get_forecast_url(self, forecast_time, now, j):
+        """
+        Generate the URL for fetching the wave and wind data based on the forecast time.
+
+        :param forecast_time: Current forecast time.
+        :param now: Current time.
+        :param j: Hour offset for the forecast.
+        :return: Generated URL and forecast hour.
+        """
+        if forecast_time <= now:
+            forecast_hour = self.map_hour(forecast_time.hour)
+            j = forecast_time.hour % 6
+            h = '{:03d}'.format(j)
+            url = (
+                    "https://nomads.ncep.noaa.gov/cgi-bin/filter_gfswave.pl?dir=%2Fgfs." +
+                    forecast_time.strftime("%Y%m%d") + "%2F" + forecast_hour + "%2Fwave%2Fgridded&file="
+                                                                               "gfswave.t" + forecast_hour + "z.global.0p25.f" + h + ".grib2" + self.parse_for_noaa()
+            )
+        else:
+            h = '{:03d}'.format(j)
+            forecast_hour = self.map_hour(now.hour)
+            url = (
+                    "https://nomads.ncep.noaa.gov/cgi-bin/filter_gfswave.pl?dir=%2Fgfs." +
+                    now.strftime("%Y%m%d") + "%2F" + forecast_hour + "%2Fwave%2Fgridded&file="
+                                                                     "gfswave.t" + forecast_hour + "z.global.0p25.f" + h + ".grib2" + self.parse_for_noaa()
+            )
+        return url, forecast_hour, j
+
+    def fetch_data_from_url(self, url, filename):
+        """
+        Fetch data from the specified URL and save it to the given filename.
+
+        :param url: URL to fetch the data from.
+        :param filename: Name of the file to save the data to.
+        :return: Loaded dataset from the fetched file.
+        """
+        urlretrieve(url, filename)
+        wave_unprocessed = xr.load_dataset(filename, engine='cfgrib')
+        return wave_unprocessed
+
+    def process_wave_data(self, wave_unprocessed, j):
+        """
+        Process the wave data by extracting necessary information and adjusting the time.
+
+        :param wave_unprocessed: Loaded dataset containing wave data.
+        :param j: Hour offset for the forecast.
+        :return: Processed data including time and other variables.
+        """
+        res = {"longitude": wave_unprocessed["longitude"].values.tolist(),
+               "latitude": wave_unprocessed["latitude"].values.tolist()}
+        t = wave_unprocessed["time"].values
+        t = int(t.astype('datetime64[s]').astype('int64'))
+        t = t + 3600 * j
+        time_data = [t]
+
+        for v in wave_unprocessed:
+            print("{}, {}, {}".format(v, wave_unprocessed[v].attrs["long_name"], wave_unprocessed[v].attrs["units"]))
+            if v in res:
+                res[v].append(wave_unprocessed[v].values.tolist())
+            else:
+                res[v] = [wave_unprocessed[v].values.tolist()]
+        return res, time_data
+
     def fetch_wave_and_wind(self):
+        """
+        Fetch wave and wind data from NOAA and process it for further use.
+
+        :return: Processed wave and wind data.
+        """
         now = datetime.now().astimezone(pytz.timezone('America/New_York'))
         res = {}
         time_start, time_end = self.__request.get_time()
         time_start, time_end = time_start.astimezone(pytz.timezone('America/New_York')), time_end.astimezone(
             pytz.timezone('America/New_York'))
         forecast_time = time_start
-        i = 0
         j = 0
         time_data = []
-        forecast_hour = None
+
         while forecast_time <= time_end:
-
-            if forecast_time <= now:
-
-                forecast_hour = self.map_hour(forecast_time.hour)
-                j = forecast_time.hour % 6
-                h = '{:03d}'.format(j)
-                url = (
-                        "https://nomads.ncep.noaa.gov/cgi-bin/filter_gfswave.pl?dir=%2Fgfs." +
-                        forecast_time.strftime("%Y%m%d") + "%2F" + forecast_hour + "%2Fwave%2Fgridded&file="
-                                                                                   "gfswave.t" + forecast_hour +
-                        "z.global.0p25.f" + h + ".grib2" + self.__request.parse_for_noaa()
-                )
-                print(forecast_hour)
-                print(h)
-            else:
-                h = '{:03d}'.format(j)
-                forecast_hour = self.map_hour(now.hour)
-
-                url = (
-                        "https://nomads.ncep.noaa.gov/cgi-bin/filter_gfswave.pl?dir=%2Fgfs." +
-                        now.strftime("%Y%m%d") + "%2F" + forecast_hour + "%2Fwave%2Fgridded&file="
-                                                                         "gfswave.t" + forecast_hour +
-                        "z.global.0p25.f" + h + ".grib2" + self.__request.parse_for_noaa()
-                )
-                print(forecast_hour)
-                print(h)
-
+            url, forecast_hour, j = self.get_forecast_url(forecast_time, now, j)
             filename = "ww" + forecast_time.strftime("%Y%m%d") + forecast_hour + str(j) + ".grib2"
-            atexit.register(rm_grib_files, filename)
+
             try:
-                urlretrieve(url, filename)
-                wave_unproccessed = xr.load_dataset(filename, engine='cfgrib')
-                res["longitude"] = wave_unproccessed["longitude"].values.tolist()
-                res["latitude"] = wave_unproccessed["latitude"].values.tolist()
-                t = wave_unproccessed["time"].values
-                t = int(t.astype('datetime64[s]').astype('int64'))
-                t = t + 3600 * j
-                time_data.append(t)
-                j = j + 1
+                wave_unprocessed = self.fetch_data_from_url(url, filename)
+                wave_res, wave_time_data = self.process_wave_data(wave_unprocessed, j)
 
-                for v in wave_unproccessed:
+                if not res:
+                    res = wave_res
+                else:
+                    for key, value in wave_res.items():
+                        if key in res:
+                            res[key].extend(value)
+                        else:
+                            res[key] = value
 
-                    print("{}, {}, {}".format(
-                        v, wave_unproccessed[v].attrs["long_name"], wave_unproccessed[v].attrs["units"]))
-                    if v in res:
-                        res[v].append(wave_unproccessed[v].values.tolist())
-                    else:
-                        res[v] = []
-                        res[v].append(wave_unproccessed[v].values.tolist())
+                time_data.extend(wave_time_data)
+                j += 1
+
             except Exception as e:
                 return str(e)
 
-            i = i + 1
-            forecast_time = forecast_time + timedelta(hours=1)
-        res["time"] = []
-        for e in time_data:
-            res["time"].append(e)
+            forecast_time += timedelta(hours=1)
 
+        res["time"] = time_data
         return res
 
     def fetch(self) -> dict[str, dict]:
