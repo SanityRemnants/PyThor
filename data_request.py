@@ -1,14 +1,24 @@
 from datetime import datetime
 from copy import copy
 
+
 class DataRequest:
+    """
+    A class that handles processing received API request and storing request data
+    """
+
     class __RangeParam:
         def __init__(self, start, end):
             self.start = start
             self.end = end
 
     @staticmethod
-    def __parse_variables(request_vars):
+    def __parse_variables(request_vars) -> tuple[list, list, list]:
+        """
+        parse variable names from the API request to corresponding variable names for NOAA and Copernicus services
+        :param request_vars: API request variables
+        :return: a tuple of three list: noaa variables, currents variables and tide variables
+        """
         wave_and_wind_dict = {
             "wave_direction": ["var_DIRPW=on"],
             "wave_height": ["var_HTSGW=on"],
@@ -46,7 +56,13 @@ class DataRequest:
         self.__time_interval = float(interval)
         self.noaa_variables, self.currents_variables, self.tide_variables = self.__parse_variables(variables)
 
-    def parse_for_noaa(self):
+    def parse_for_noaa(self) -> str:
+        """
+        parse API request data to fit noaa standards:
+        - convert units
+        - prepare correct noaa api request ending (request without specified adress and files)
+        :return: noaa api request ending (containing coordinates and variables)
+        """
         left = self.__longitude.start
         if left < 0:
             left = 180 + (180 + left)
@@ -63,18 +79,35 @@ class DataRequest:
             result += "&" + v
         return result
 
-    def get_time(self):
+    def get_time(self) -> tuple[datetime, datetime]:
+        """
+        returns time range in datetime objects
+        :return: tuple of dates (start,end)
+        """
         time_start = self.__time.start
         time_end = self.__time.end
         return time_start, time_end
 
-    def get_coordinates(self):
-        return {"longitude":[self.__longitude.start,self.__longitude.end],"latitude":[self.__latitude.start,self.__latitude.end]}
+    def get_coordinates(self) -> dict[str, list]:
+        """
+        get coordinates from the API request in lat lon units
+        :return: dict with structure longitude: [start,stop], latitude: [start,stop]
+        """
+        return {"longitude": [self.__longitude.start, self.__longitude.end],
+                "latitude": [self.__latitude.start, self.__latitude.end]}
 
     def get_time_interval(self):
+        """
+        get time interval in hours
+        :return: float
+        """
         return self.__time_interval
 
-    def parse_for_copernicus_currents(self):
+    def parse_for_copernicus_currents(self) -> dict:
+        """
+        parse API request into copernicus request dictionary for currents variables
+        :return: a dict compatible with copernicus marine API
+        """
         result = {
             "dataset_id": "cmems_mod_glo_phy-cur_anfc_0.083deg_PT6H-i",
             "longitude": [self.__longitude.start, self.__longitude.end],
@@ -85,6 +118,10 @@ class DataRequest:
         return result
 
     def parse_for_copernicus_tide(self):
+        """
+        parse API request into copernicus request dictionary for tide variables
+        :return: a dict compatible with copernicus marine API
+        """
         result = {
             "dataset_id": "cmems_mod_glo_phy_anfc_0.083deg_PT1H-m",
             "longitude": [self.__longitude.start, self.__longitude.end],
@@ -94,7 +131,11 @@ class DataRequest:
         }
         return result
 
-    def is_valid(self):
+    def is_valid(self) -> bool:
+        """
+        checks whether the recieved API request is valid
+        :return: true if valid
+        """
         if not (-180.0 <= self.__longitude.start <= 180.0):
             return False
         if not (-180.0 <= self.__longitude.end <= 180.0):
