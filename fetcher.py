@@ -13,13 +13,18 @@ import atexit
 import data_request as dr
 
 
-def rm_grib_files(file_name):
+def rm_grib_files(file_name: str):
+    """
+    hook function that gets registered after each downloaded grib file to ensure that after the program ends
+     there are no residual files left (grib files and corresponding .idx files)
+    :param file_name: a name of a grib file to be removed after program exit
+    :return:
+    """
     try:
         os.remove(file_name)
         os.remove(file_name + ".923a8.idx")
     except FileNotFoundError:
         return
-
 
 
 class Fetcher:
@@ -35,6 +40,11 @@ class Fetcher:
 
     @staticmethod
     def map_hour(hour):
+        """
+        map provided hour to the closest correct forecast hour (00,06,12,18)
+        :param hour: float or int
+        :return:
+        """
         forecast_hours = {(0, 5): "00", (6, 11): "06",
                           (12, 17): "12", (18, 23): "18"}
         for key in forecast_hours:
@@ -42,8 +52,12 @@ class Fetcher:
                 return forecast_hours[key]
 
     def fetch_currents(self):
+        """
+        send request to copernicus service for currents data
+        :return: xarray dataset
+        """
         data_request = self.__request.parse_for_copernicus_currents()
-        sst_l3s = copernicusmarine.open_dataset(
+        currents = copernicusmarine.open_dataset(
             dataset_id=data_request["dataset_id"],
             minimum_longitude=data_request["longitude"][0],
             maximum_longitude=data_request["longitude"][1],
@@ -52,11 +66,15 @@ class Fetcher:
             start_datetime=data_request["time"][0],
             end_datetime=data_request["time"][1],
             variables=data_request["variables"], username=self.USERNAME, password=self.PASSWORD)
-        return sst_l3s
+        return currents
 
     def fetch_tide(self):
+        """
+        send request to copernicus service for tide data
+        :return: xarray dataset
+        """
         data_request = self.__request.parse_for_copernicus_tide()
-        sst_l3s = copernicusmarine.open_dataset(
+        tide = copernicusmarine.open_dataset(
             dataset_id=data_request["dataset_id"],
             minimum_longitude=data_request["longitude"][0],
             maximum_longitude=data_request["longitude"][1],
@@ -65,7 +83,7 @@ class Fetcher:
             start_datetime=data_request["time"][0],
             end_datetime=data_request["time"][1],
             variables=data_request["variables"], username=self.USERNAME, password=self.PASSWORD)
-        return sst_l3s
+        return tide
 
     def fetch_wave_and_wind(self):
         now = datetime.now().astimezone(pytz.timezone('America/New_York'))
@@ -81,7 +99,6 @@ class Fetcher:
         while forecast_time <= time_end:
 
             if forecast_time <= now:
-
 
                 forecast_hour = self.map_hour(forecast_time.hour)
                 j = forecast_time.hour % 6
@@ -106,7 +123,6 @@ class Fetcher:
                 )
                 print(forecast_hour)
                 print(h)
-
 
             filename = "ww" + forecast_time.strftime("%Y%m%d") + forecast_hour + str(j) + ".grib2"
             atexit.register(rm_grib_files, filename)
@@ -141,7 +157,14 @@ class Fetcher:
 
         return res
 
-    def fetch(self):
+    def fetch(self) -> dict[str, dict]:
+        """
+        fetch relevant data based on the DataRequest provided in the constructor
+        :return: a dict structured like:
+            - waves_and_wind : dict with waves and wind data from noaa
+            - tides : dict with tides data from copernicus
+            - currents : dict with currents data from copernicus
+        """
         waves_and_wind, tides, currents = None, None, None
         res = {}
         if len(self.__request.noaa_variables) > 0:
