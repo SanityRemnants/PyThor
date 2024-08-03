@@ -24,16 +24,35 @@ def get_data(result):
 def check_keys(keys_to_check, wave_wind_not_inter, keys, weather, result, lon_inter, lat_inter, time_inter):
     for key in keys_to_check:
         if key in wave_wind_not_inter:
-            keys.append(key)
-            key_inter = key + "_inter"
-            weather[key] = np.array(wave_wind_not_inter[key])
-            weather[key + "_mask"] = np.isnan(weather[key]).astype(float)
-            print(weather[key + "_mask"])
-            keys.append(key + "_mask")
-            result[key_inter] = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in
-                                 range(len(time_inter))]
-            result[key + "_mask" + "_inter"] = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in
-                                                range(len(time_inter))]
+            if key == "dirpw":
+                components = [key + "_x", key + "_y"]
+                for c in components:
+                    key = c
+                    keys.append(key)
+                    key_inter = key + "_inter"
+                    if key[-1] == "x":
+                        weather[key] = np.cos(np.deg2rad(np.array(wave_wind_not_inter[key[:-2]])))
+                    else:
+                        weather[key] = np.sin(np.deg2rad(np.array(wave_wind_not_inter[key[:-2]])))
+
+                    weather[key + "_mask"] = np.isnan(weather[key]).astype(float)
+                    print(weather[key + "_mask"])
+                    keys.append(key + "_mask")
+                    result[key_inter] = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in
+                                         range(len(time_inter))]
+                    result[key + "_mask" + "_inter"] = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in
+                                                        range(len(time_inter))]
+            else:
+                keys.append(key)
+                key_inter = key + "_inter"
+                weather[key] = np.array(wave_wind_not_inter[key])
+                weather[key + "_mask"] = np.isnan(weather[key]).astype(float)
+                print(weather[key + "_mask"])
+                keys.append(key + "_mask")
+                result[key_inter] = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in
+                                     range(len(time_inter))]
+                result[key + "_mask" + "_inter"] = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in
+                                                    range(len(time_inter))]
 
     normal = {key: value.tolist() if isinstance(value, np.ndarray) else value for key, value in
               weather.items()}
@@ -58,7 +77,6 @@ def time_interpolation(time, lat_inter, lon_inter, res, key, time_inter, result,
     interpolator = RegularGridInterpolator((time, lat_inter, lon_inter), res)
     key_inter = key + "_inter"
     for k in range(len(time_inter)):
-        # Interpolacja wzdłuż czasu
         for i in range(len(lat_inter)):
             for j in range(len(lon_inter)):
                 result[key_inter][k][i][j] = interpolator([time_inter[k], lat_inter[i], lon_inter[j]])
@@ -98,12 +116,20 @@ def interpolate(result, interval):
     res = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in range(len(time))]
 
     for key in keys:
+
         latlon_interpolation(time, weather, key, lat_grid, lon_grid, lat_inter_grid, lon_inter_grid, res)
         time_interpolation(time, lat_inter, lon_inter, res, key, time_inter, result, weather)
 
     keys_to_iter = deepcopy(list(weather.keys()))
 
     apply_nan_masc(keys_to_iter, weather, land_treshhold)
+    weather_copy = weather.copy()
+    for el in weather_copy:
+        if el[-2:] == "_x":
+            key = el[:-2]
+            key_weather = np.rad2deg(np.arctan2(weather[key + "_y"], weather[key + "_x"]))
+            key_weather = np.mod(key_weather, 360)
+            weather[key] = [[[float(value) for value in row] for row in slice_] for slice_ in key_weather]
 
     weather["time_inter"] = time_inter.tolist()
     # weather["time"] = time.tolist()
