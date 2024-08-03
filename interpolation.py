@@ -13,23 +13,15 @@ def spherical_to_cartesian(lat, lon, r=1):
     return x, y, z
 
 
-def interpolate(result,interval):
-    resoution = 0.15
-    land_treshhold = 0.5
+def get_data(result):
     wave_wind_not_inter = result["waves_and_wind"]
     lat = np.array(wave_wind_not_inter["latitude"])
     lon = np.array(wave_wind_not_inter["longitude"])
     time = np.array(wave_wind_not_inter["time"])
-    lat_inter = np.arange(lat[0], lat[-1], resoution)
-    lon_inter = np.arange(lon[0], lon[-1], resoution)
-    if time[0] != time[-1]:
-        time_inter = np.arange(time[0], time[-1], int(interval*3600))
-    else:
-        time_inter = time
+    return wave_wind_not_inter, lat, lon, time
 
-    keys_to_check = ["dirpw", "swh", "perpw", "u", "v", "ws"]
-    keys = []
-    weather = {}
+
+def check_keys(keys_to_check, wave_wind_not_inter, keys, weather, result, lon_inter, lat_inter, time_inter):
     for key in keys_to_check:
         if key in wave_wind_not_inter:
             keys.append(key)
@@ -46,34 +38,34 @@ def interpolate(result,interval):
     normal = {key: value.tolist() if isinstance(value, np.ndarray) else value for key, value in
               weather.items()}
 
-    lon_grid, lat_grid = np.meshgrid(lon, lat)
-    lon_inter_grid, lat_inter_grid = np.meshgrid(lon_inter, lat_inter)
-    res = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in range(len(time))]
-    for key in keys:
-        for k in range(len(time)):
-            # Interpolacja po długości i szerokości
-            elem = weather[key]
-            nan_mask = np.isnan(elem[k])
-            indices = np.where(~nan_mask)
-            data_points_valid = elem[k][indices]
-            lat_valid = lat_grid[~nan_mask]
-            lon_valid = lon_grid[~nan_mask]
-            x, y, z = spherical_to_cartesian(lat_valid.ravel(), lon_valid.ravel())
-            interp_spatial = Rbf(x, y, z, data_points_valid, function='thin_plate', smooth=0)
 
-            x_inter, y_inter, z_inter = spherical_to_cartesian(lat_inter_grid, lon_inter_grid)
-            res[k] = interp_spatial(x_inter, y_inter, z_inter)
+def latlon_interpolation(time, weather, key, lat_grid, lon_grid, lat_inter_grid, lon_inter_grid, res):
+    for k in range(len(time)):
+        elem = weather[key]
+        nan_mask = np.isnan(elem[k])
+        indices = np.where(~nan_mask)
+        data_points_valid = elem[k][indices]
+        lat_valid = lat_grid[~nan_mask]
+        lon_valid = lon_grid[~nan_mask]
+        x, y, z = spherical_to_cartesian(lat_valid.ravel(), lon_valid.ravel())
+        interp_spatial = Rbf(x, y, z, data_points_valid, function='thin_plate', smooth=0)
 
-        interpolator = RegularGridInterpolator((time, lat_inter, lon_inter), res)
-        key_inter = key + "_inter"
-        for k in range(len(time_inter)):
-            # Interpolacja wzdłuż czasu
-            for i in range(len(lat_inter)):
-                for j in range(len(lon_inter)):
-                    result[key_inter][k][i][j] = interpolator([time_inter[k], lat_inter[i], lon_inter[j]])
+        x_inter, y_inter, z_inter = spherical_to_cartesian(lat_inter_grid, lon_inter_grid)
+        res[k] = interp_spatial(x_inter, y_inter, z_inter)
 
-        weather[key] = [[[float(value[0]) for value in row] for row in slice_] for slice_ in result[key_inter]]
-    keys_to_iter = deepcopy(list(weather.keys()))
+
+def time_interpolation(time, lat_inter, lon_inter, res, key, time_inter, result, weather):
+    interpolator = RegularGridInterpolator((time, lat_inter, lon_inter), res)
+    key_inter = key + "_inter"
+    for k in range(len(time_inter)):
+        # Interpolacja wzdłuż czasu
+        for i in range(len(lat_inter)):
+            for j in range(len(lon_inter)):
+                result[key_inter][k][i][j] = interpolator([time_inter[k], lat_inter[i], lon_inter[j]])
+    weather[key] = [[[float(value[0]) for value in row] for row in slice_] for slice_ in result[key_inter]]
+
+
+def apply_nan_masc(keys_to_iter, weather, land_treshhold):
     for k in keys_to_iter:
         if "mask" in k:
             key_to_nan = k.replace("_mask", "")
@@ -83,6 +75,36 @@ def interpolate(result,interval):
                         if weather[k][t][l][lt] >= land_treshhold:
                             weather[key_to_nan][t][l][lt] = np.NaN
             # weather.pop(k)
+
+
+def interpolate(result, interval):
+    resoution = 0.15
+    land_treshhold = 0.5
+    wave_wind_not_inter, lat, lon, time = get_data(result)
+    lat_inter = np.arange(lat[0], lat[-1], resoution)
+    lon_inter = np.arange(lon[0], lon[-1], resoution)
+    if time[0] != time[-1]:
+        time_inter = np.arange(time[0], time[-1], int(interval * 3600))
+    else:
+        time_inter = time
+
+    keys_to_check = ["dirpw", "swh", "perpw", "u", "v", "ws"]
+    keys = []
+    weather = {}
+    check_keys(keys_to_check, wave_wind_not_inter, keys, weather, result, lon_inter, lat_inter, time_inter)
+
+    lon_grid, lat_grid = np.meshgrid(lon, lat)
+    lon_inter_grid, lat_inter_grid = np.meshgrid(lon_inter, lat_inter)
+    res = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in range(len(time))]
+
+    for key in keys:
+        latlon_interpolation(time, weather, key, lat_grid, lon_grid, lat_inter_grid, lon_inter_grid, res)
+        time_interpolation(time, lat_inter, lon_inter, res, key, time_inter, result, weather)
+
+    keys_to_iter = deepcopy(list(weather.keys()))
+
+    apply_nan_masc(keys_to_iter, weather, land_treshhold)
+
     weather["time_inter"] = time_inter.tolist()
     # weather["time"] = time.tolist()
 

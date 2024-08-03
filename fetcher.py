@@ -28,6 +28,9 @@ def rm_grib_files(file_name: str):
 
 
 class Fetcher:
+    """
+    The class is responsible for fetching and processing data from external weather sources.
+    """
     def __init__(self, request):
         if isinstance(request, dr.DataRequest):
             self.__request = request
@@ -86,6 +89,11 @@ class Fetcher:
         return tide
 
     def fetch_wave_and_wind(self):
+        """
+        Fetch wave and wind data from NOAA and process it for further use.
+
+        :return: Processed wave and wind data.
+        """
         now = datetime.now().astimezone(pytz.timezone('America/New_York'))
         res = {}
         time_start, time_end = self.__request.get_time()

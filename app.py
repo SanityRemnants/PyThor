@@ -22,7 +22,7 @@ app = Flask(__name__)
 
 
 @app.route('/api/weather')
-def root():  # put application's code here
+def root():  
     data_request = DataRequest(request.args.get('latitude_start'), request.args.get('latitude_end'),
                                request.args.get('longitude_start'), request.args.get('longitude_end'),
                                request.args.get('time_start'), request.args.get('time_end'),
@@ -33,7 +33,7 @@ def root():  # put application's code here
     result = Fetcher(data_request).fetch()
 
     wave_wind_not_inter = result["waves_and_wind"]
-    res = interpolate(result,data_request.get_time_interval())
+    res = interpolate(result, data_request.get_time_interval())
     return res
 
 
