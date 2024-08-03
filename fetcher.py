@@ -28,9 +28,6 @@ def rm_grib_files(file_name: str):
 
 
 class Fetcher:
-    """
-        The class is responsible for fetching and processing data from external weather sources.
-    """
     def __init__(self, request):
         if isinstance(request, dr.DataRequest):
             self.__request = request
