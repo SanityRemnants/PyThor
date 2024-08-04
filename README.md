@@ -13,7 +13,9 @@ Konto wymagane jest jedynie do uzyskania danych dotyczących pływów i prądów
 Aplikacja domyślnie działa pod adresem 127.0.0.1:5000.
 
 Aby uzyskać dane pogodowe należy zadać zapytanie w ponmiższym formacie:
+```
 http://127.0.0.1:5000/api/weather?latitude_start=<span style="color:red">latitude_start</span>&latitude_end=<span style="color:red">latitude_end</span>&longitude_start=<span style="color:red">longitude_start</span>&longitude_end=<span style="color:red">longitude_end</span>&variables=<span style="color:blue">variables</span>&time_start=<span style="color:yellow">time_start</span>&time_end=<span style="color:yellow">time_end</span>
+```
 
 
 ## przykładowy get:
