@@ -13,13 +13,17 @@ def spherical_to_cartesian(lat, lon, r=1):
     return x, y, z
 
 
-def get_data(result):
-    wave_wind_not_inter = result["waves_and_wind"]
+def get_data(wave_wind_not_inter):
     lat = np.array(wave_wind_not_inter["latitude"])
     lon = np.array(wave_wind_not_inter["longitude"])
     time = np.array(wave_wind_not_inter["time"])
-    return wave_wind_not_inter, lat, lon, time
+    return lat, lon, time
 
+def get_copernicus_data(data):
+    lat = np.array(data["coords"]["latitude"]["data"])
+    lon = np.array(data["coords"]["longitude"]["data"])
+    time = np.array(data["coords"]["time"]["data"])
+    return lat, lon, time
 
 def check_keys(keys_to_check, wave_wind_not_inter, keys, weather, result, lon_inter, lat_inter, time_inter):
     for key in keys_to_check:
@@ -95,10 +99,34 @@ def apply_nan_masc(keys_to_iter, weather, land_treshhold):
             # weather.pop(k)
 
 
-def interpolate(result, interval):
+def interpolate_for_copernicus(weather, result, interval):
+    res = {}
+    data = result["copernicus"]
     resoution = 0.15
     land_treshhold = 0.5
-    wave_wind_not_inter, lat, lon, time = get_data(result)
+    for element in result:
+        lat, lon, time = get_copernicus_data(element)
+
+        if weather != {}:
+            lat_inter = weather["lat_inter"]
+            lon_inter = weather["lon_inter"]
+            time_inter = weather["time_inter"]
+        else:
+            if time[0] != time[-1]:
+                time_inter = np.arange(time[0], time[-1], int(interval * 3600))
+            else:
+                time_inter = time
+            lat_inter = np.arange(lat[0], lat[-1], resoution)
+            lon_inter = np.arange(lon[0], lon[-1], resoution)
+
+    return res
+
+
+def interpolate(result, interval) :
+    resoution = 0.15
+    land_treshhold = 0.5
+    wave_wind_not_inter = result["waves_and_wind"]
+    lat, lon, time = get_data(wave_wind_not_inter)
     lat_inter = np.arange(lat[0], lat[-1], resoution)
     lon_inter = np.arange(lon[0], lon[-1], resoution)
     if time[0] != time[-1]:
@@ -116,7 +144,6 @@ def interpolate(result, interval):
     res = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in range(len(time))]
 
     for key in keys:
-
         latlon_interpolation(time, weather, key, lat_grid, lon_grid, lat_inter_grid, lon_inter_grid, res)
         time_interpolation(time, lat_inter, lon_inter, res, key, time_inter, result, weather)
 
@@ -128,6 +155,11 @@ def interpolate(result, interval):
         if el[-2:] == "_x":
             key = el[:-2]
             key_weather = np.rad2deg(np.arctan2(weather[key + "_y"], weather[key + "_x"]))
+            key_weather = np.mod(key_weather, 360)
+            weather[key] = [[[float(value) for value in row] for row in slice_] for slice_ in key_weather]
+        elif el == "v":
+            key = "wdir"
+            key_weather = np.arctan2(weather["u"], weather["v"]) * (180 / np.pi) + 180
             key_weather = np.mod(key_weather, 360)
             weather[key] = [[[float(value) for value in row] for row in slice_] for slice_ in key_weather]
 

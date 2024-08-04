@@ -182,6 +182,9 @@ class Fetcher:
         if len(self.__request.currents_variables) > 0:
             currents = self.fetch_currents().to_dict()
         res["waves_and_wind"] = waves_and_wind
-        res["tides"] = tides
-        res["currents"] = currents
+        res["copernicus"] = {}
+        if tides is not None:
+            res["copernicus"]["tides"] = tides
+        if currents is not None:
+            res["copernicus"]["currents"] = currents
         return res
