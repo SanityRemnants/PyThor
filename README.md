@@ -14,7 +14,7 @@ Aplikacja domyślnie działa pod adresem 127.0.0.1:5000.
 
 Aby uzyskać dane pogodowe należy zadać zapytanie w ponmiższym formacie:
 
-127.0.0.1:5000/api/weather?latitude_start=[<span style="color:red">](https://placehold.it/150/ffffff/ff0000?text=latitude_start)&latitude_end=<span style="color:red">latitude_end</span>&longitude_start=<span style="color:red">longitude_start</span>&longitude_end=<span style="color:red">longitude_end</span>&variables=<span style="color:blue">variables</span>&time_start=<span style="color:yellow">time_start</span>&time_end=<span style="color:yellow">time_end</span>
+127.0.0.1:5000/api/weather?latitude_start=[](https://placehold.it/150/ffffff/ff0000?text=latitude_start)&latitude_end=<span style="color:red">latitude_end</span>&longitude_start=<span style="color:red">longitude_start</span>&longitude_end=<span style="color:red">longitude_end</span>&variables=<span style="color:blue">variables</span>&time_start=<span style="color:yellow">time_start</span>&time_end=<span style="color:yellow">time_end</span>
 
 
 
