@@ -38,6 +38,7 @@ class Fetcher:
             raise print("argument is not valid data request")
         with open("config.yaml", "r") as f:
             config = yaml.safe_load(f)
+            self.use_copernicus = config["use_copernicus"]
             self.USERNAME = config["coppernicus_acount"]["username"]
             self.PASSWORD = config["coppernicus_acount"]["password"]
 
@@ -177,14 +178,14 @@ class Fetcher:
         res = {}
         if len(self.__request.noaa_variables) > 0:
             waves_and_wind = self.fetch_wave_and_wind()
-        if len(self.__request.tide_variables) > 0:
-            tides = self.fetch_tide().to_dict()
-        if len(self.__request.currents_variables) > 0:
-            currents = self.fetch_currents().to_dict()
         res["waves_and_wind"] = waves_and_wind
-        res["copernicus"] = {}
-        if tides is not None:
-            res["copernicus"]["tides"] = tides
-        if currents is not None:
-            res["copernicus"]["currents"] = currents
+        if self.use_copernicus == "1":
+            res["copernicus"] = {}
+            if len(self.__request.tide_variables) > 0:
+                tides = self.fetch_tide().to_dict()
+                res["copernicus"]["tides"] = tides
+            if len(self.__request.currents_variables) > 0:
+                currents = self.fetch_currents().to_dict()
+                res["copernicus"]["currents"] = currents
+
         return res
