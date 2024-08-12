@@ -10,11 +10,11 @@ coppernicus_acount:
 ```
 Konto wymagane jest jedynie do uzyskania danych dotyczących pływów i prądów morskich, do używania pozostałych funkcjonalności biblioteki konto nie jest wymagane. Jeżeli wiemy, że dane z serwisu Copernicus nie będą używane sugerowane jest zmiana wartości 
 ```
-use_copernicus: "True"
+use_copernicus: True
 ```
 na 
 ```
-use_copernicus: "False"
+use_copernicus: False
 ```
 w pliku konfiguracyjnym. Dzięki temu biblioteka będzie uruchamiała się zdecydowanie szybciej, jednakże kożystanie z danych z serwisu będzie niemożliwe.
 
