@@ -2,4 +2,4 @@ coppernicus_acount:
   username: ""
   password: ""
 resolution: "0.1"
-use_copernicus: "1"
+use_copernicus: "True"
