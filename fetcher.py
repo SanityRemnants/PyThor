@@ -1,3 +1,4 @@
+import asyncio
 from urllib.request import urlretrieve
 
 import numpy as np
@@ -31,7 +32,10 @@ class Fetcher:
     """
     The class is responsible for fetching and processing data from external weather sources.
     """
+
     def __init__(self, request):
+        self.currents = None
+        self.tide = None
         if isinstance(request, dr.DataRequest):
             self.__request = request
         else:
@@ -55,13 +59,14 @@ class Fetcher:
             if key[0] <= hour <= key[1]:
                 return forecast_hours[key]
 
-    def fetch_currents(self):
-        """
-        send request to copernicus service for currents data
-        :return: xarray dataset
-        """
-        data_request = self.__request.parse_for_copernicus_currents()
-        currents = copernicusmarine.open_dataset(
+    def run_currents_task(self, data_request):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(self.fetch_currents_async(data_request))
+        loop.close()
+
+    async def fetch_currents_async(self, data_request):
+        self.currents = copernicusmarine.open_dataset(
             dataset_id=data_request["dataset_id"],
             minimum_longitude=data_request["longitude"][0],
             maximum_longitude=data_request["longitude"][1],
@@ -70,7 +75,32 @@ class Fetcher:
             start_datetime=data_request["time"][0],
             end_datetime=data_request["time"][1],
             variables=data_request["variables"], username=self.USERNAME, password=self.PASSWORD)
-        return currents
+
+    def fetch_currents(self):
+        """
+        send request to copernicus service for currents data
+        :return: xarray dataset
+        """
+        data_request = self.__request.parse_for_copernicus_currents()
+        self.run_currents_task(data_request)
+        return self.currents
+
+    def run_tide_task(self, data_request):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(self.fetch_tide_async(data_request))
+        loop.close()
+
+    async def fetch_tide_async(self, data_request):
+        self.tide = copernicusmarine.open_dataset(
+            dataset_id=data_request["dataset_id"],
+            minimum_longitude=data_request["longitude"][0],
+            maximum_longitude=data_request["longitude"][1],
+            minimum_latitude=data_request["latitude"][0],
+            maximum_latitude=data_request["latitude"][1],
+            start_datetime=data_request["time"][0],
+            end_datetime=data_request["time"][1],
+            variables=data_request["variables"], username=self.USERNAME, password=self.PASSWORD)
 
     def fetch_tide(self):
         """
@@ -78,16 +108,8 @@ class Fetcher:
         :return: xarray dataset
         """
         data_request = self.__request.parse_for_copernicus_tide()
-        tide = copernicusmarine.open_dataset(
-            dataset_id=data_request["dataset_id"],
-            minimum_longitude=data_request["longitude"][0],
-            maximum_longitude=data_request["longitude"][1],
-            minimum_latitude=data_request["latitude"][0],
-            maximum_latitude=data_request["latitude"][1],
-            start_datetime=data_request["time"][0],
-            end_datetime=data_request["time"][1],
-            variables=data_request["variables"], username=self.USERNAME, password=self.PASSWORD)
-        return tide
+        self.run_tide_task(data_request)
+        return self.tide
 
     def fetch_wave_and_wind(self):
         """
@@ -179,13 +201,12 @@ class Fetcher:
         if len(self.__request.noaa_variables) > 0:
             waves_and_wind = self.fetch_wave_and_wind()
         res["waves_and_wind"] = waves_and_wind
-        if self.use_copernicus == "1":
-            res["copernicus"] = {}
-            if len(self.__request.tide_variables) > 0:
-                tides = self.fetch_tide().to_dict()
-                res["copernicus"]["tides"] = tides
-            if len(self.__request.currents_variables) > 0:
-                currents = self.fetch_currents().to_dict()
-                res["copernicus"]["currents"] = currents
+        res["copernicus"] = {}
+        if len(self.__request.tide_variables) > 0:
+            tides = self.fetch_tide().to_dict()
+            res["copernicus"]["tides"] = tides
+        if len(self.__request.currents_variables) > 0:
+            currents = self.fetch_currents().to_dict()
+            res["copernicus"]["currents"] = currents
 
         return res
