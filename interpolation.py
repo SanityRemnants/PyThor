@@ -93,8 +93,10 @@ def apply_nan_masc(keys_to_iter, weather, land_treshhold):
             key_to_nan = k.replace("_mask", "")
             for t in range(len(weather[key_to_nan])):
                 for l in range(len(weather[key_to_nan][t])):
+                    wl = weather[key_to_nan][t][l]
                     for lt in range(len(weather[key_to_nan][t][l])):
-                        if weather[k][t][l][lt] >= land_treshhold:
+                        wlt = wl[lt]
+                        if wlt >= land_treshhold:
                             weather[key_to_nan][t][l][lt] = np.NaN
             # weather.pop(k)
 
