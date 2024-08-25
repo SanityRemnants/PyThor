@@ -95,10 +95,10 @@ def apply_nan_masc(keys_to_iter, weather, land_treshhold):
             for t in range(len(weather[key_to_nan])):
 
                 for l in range(len(weather[key_to_nan][t])):
-                    workaround = weather[key_to_nan][t][l]
+                    wl = weather[k][t][l]
                     for lt in range(len(weather[key_to_nan][t][l])):
-                        workaround2 = workaround[lt]
-                        if workaround2 >= land_treshhold:
+                        wlt = wl[lt]
+                        if wlt >= land_treshhold:
                             weather[key_to_nan][t][l][lt] = np.NaN
             # weather.pop(k)
 
