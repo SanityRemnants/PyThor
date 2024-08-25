@@ -42,7 +42,6 @@ class Fetcher:
             raise print("argument is not valid data request")
         with open("config.yaml", "r") as f:
             config = yaml.safe_load(f)
-            self.use_copernicus = config["use_copernicus"]
             self.USERNAME = config["coppernicus_acount"]["username"]
             self.PASSWORD = config["coppernicus_acount"]["password"]
 
