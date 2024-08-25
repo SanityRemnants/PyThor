@@ -23,7 +23,6 @@ def get_copernicus_data(data):
     lat = np.array(data["coords"]["latitude"]["data"])
     lon = np.array(data["coords"]["longitude"]["data"])
     time = np.array(data["coords"]["time"]["data"])
-    time = time.astype('datetime64[s]').astype('int64')
     return lat, lon, time
 
 def check_keys(keys_to_check, wave_wind_not_inter, keys, weather, result, lon_inter, lat_inter, time_inter):
@@ -93,12 +92,9 @@ def apply_nan_masc(keys_to_iter, weather, land_treshhold):
         if "mask" in k:
             key_to_nan = k.replace("_mask", "")
             for t in range(len(weather[key_to_nan])):
-
                 for l in range(len(weather[key_to_nan][t])):
-                    workaround = weather[key_to_nan][t][l]
                     for lt in range(len(weather[key_to_nan][t][l])):
-                        workaround2 = workaround[lt]
-                        if workaround2 >= land_treshhold:
+                        if weather[k][t][l][lt] >= land_treshhold:
                             weather[key_to_nan][t][l][lt] = np.NaN
             # weather.pop(k)
 
@@ -152,56 +148,55 @@ def interpolate_for_copernicus(weather, result, interval):
     return weather
 
 
-def interpolate(result, interval):
+
+def interpolate(result, interval) :
     resoution = 0.15
     land_treshhold = 0.5
-    weather = {}
     wave_wind_not_inter = result["waves_and_wind"]
-    if wave_wind_not_inter is not None:
-        lat, lon, time = get_data(wave_wind_not_inter)
-        lat_inter = np.arange(lat[0], lat[-1], resoution)
-        lon_inter = np.arange(lon[0], lon[-1], resoution)
-        if time[0] != time[-1]:
-            time_inter = np.arange(time[0], time[-1], int(interval * 3600))
-        else:
-            time_inter = time
+    lat, lon, time = get_data(wave_wind_not_inter)
+    lat_inter = np.arange(lat[0], lat[-1], resoution)
+    lon_inter = np.arange(lon[0], lon[-1], resoution)
+    if time[0] != time[-1]:
+        time_inter = np.arange(time[0], time[-1], int(interval * 3600))
+    else:
+        time_inter = time
 
-        keys_to_check = ["dirpw", "swh", "perpw", "u", "v", "ws"]
-        keys = []
+    keys_to_check = ["dirpw", "swh", "perpw", "u", "v", "ws"]
+    keys = []
+    weather = {}
+    check_keys(keys_to_check, wave_wind_not_inter, keys, weather, result, lon_inter, lat_inter, time_inter)
 
-        check_keys(keys_to_check, wave_wind_not_inter, keys, weather, result, lon_inter, lat_inter, time_inter)
+    lon_grid, lat_grid = np.meshgrid(lon, lat)
+    lon_inter_grid, lat_inter_grid = np.meshgrid(lon_inter, lat_inter)
+    res = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in range(len(time))]
 
-        lon_grid, lat_grid = np.meshgrid(lon, lat)
-        lon_inter_grid, lat_inter_grid = np.meshgrid(lon_inter, lat_inter)
-        res = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in range(len(time))]
+    for key in keys:
+        latlon_interpolation(time, weather, key, lat_grid, lon_grid, lat_inter_grid, lon_inter_grid, res)
+        time_interpolation(time, lat_inter, lon_inter, res, key, time_inter, result, weather)
 
-        for key in keys:
-            latlon_interpolation(time, weather, key, lat_grid, lon_grid, lat_inter_grid, lon_inter_grid, res)
-            time_interpolation(time, lat_inter, lon_inter, res, key, time_inter, result, weather)
+    keys_to_iter = deepcopy(list(weather.keys()))
 
-        keys_to_iter = deepcopy(list(weather.keys()))
+    apply_nan_masc(keys_to_iter, weather, land_treshhold)
+    weather_copy = weather.copy()
+    for el in weather_copy:
+        if el[-2:] == "_x":
+            key = el[:-2]
+            key_weather = np.rad2deg(np.arctan2(weather[key + "_y"], weather[key + "_x"]))
+            key_weather = np.mod(key_weather, 360)
+            weather[key] = [[[float(value) for value in row] for row in slice_] for slice_ in key_weather]
+        elif el == "v":
+            key = "wdir"
+            key_weather = np.arctan2(weather["u"], weather["v"]) * (180 / np.pi) + 180
+            key_weather = np.mod(key_weather, 360)
+            weather[key] = [[[float(value) for value in row] for row in slice_] for slice_ in key_weather]
 
-        apply_nan_masc(keys_to_iter, weather, land_treshhold)
-        weather_copy = weather.copy()
-        for el in weather_copy:
-            if el[-2:] == "_x":
-                key = el[:-2]
-                key_weather = np.rad2deg(np.arctan2(weather[key + "_y"], weather[key + "_x"]))
-                key_weather = np.mod(key_weather, 360)
-                weather[key] = [[[float(value) for value in row] for row in slice_] for slice_ in key_weather]
-            elif el == "v":
-                key = "wdir"
-                key_weather = np.arctan2(weather["u"], weather["v"]) * (180 / np.pi) + 180
-                key_weather = np.mod(key_weather, 360)
-                weather[key] = [[[float(value) for value in row] for row in slice_] for slice_ in key_weather]
+    weather["time_inter"] = time_inter.tolist()
+    # weather["time"] = time.tolist()
 
-        weather["time_inter"] = time_inter.tolist()
-        # weather["time"] = time.tolist()
-
-        # weather["normal"] = normal
-        # weather["lat"] = lat.tolist()
-        # weather["lon"] = lon.tolist()
-        weather["lat_inter"] = lat_inter.tolist()
-        weather["lon_inter"] = lon_inter.tolist()
+    # weather["normal"] = normal
+    # weather["lat"] = lat.tolist()
+    # weather["lon"] = lon.tolist()
+    weather["lat_inter"] = lat_inter.tolist()
+    weather["lon_inter"] = lon_inter.tolist()
 
     return interpolate_for_copernicus(weather, result, interval)
