@@ -194,6 +194,9 @@ def interpolate(result, interval):
                 key_weather = np.arctan2(weather["u"], weather["v"]) * (180 / np.pi) + 180
                 key_weather = np.mod(key_weather, 360)
                 weather[key] = [[[float(value) for value in row] for row in slice_] for slice_ in key_weather]
+            elif el[-4:]  == "mask":
+                del weather[el]
+
 
         weather["time_inter"] = time_inter.tolist()
         # weather["time"] = time.tolist()
