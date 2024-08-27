@@ -58,6 +58,7 @@ class Fetcher:
             if key[0] <= hour <= key[1]:
                 return forecast_hours[key]
 
+    @staticmethod
     def curr_map_hour(hour):
         """
         map provided hour to the closest correct forecast hour (00,06,12,18)
@@ -71,17 +72,21 @@ class Fetcher:
                 return forecast_hours[key]
 
     @staticmethod
-    def curr_map_later_hour(hour):
+    def curr_map_later_date(date):
         """
         map provided hour to the closest correct forecast hour (00,06,12,18)
-        :param hour: float or int
+        :param date: datetime
         :return:
         """
-        forecast_hours = {(0, 5): 0, (6, 11): 6,
-                          (12, 17): 12, (18, 23): 18}
+        map_date = date
+        forecast_hours = {(0, 5): 6, (6, 11): 12,
+                          (12, 17): 18, (18, 23): 0}
         for key in forecast_hours:
-            if key[0] >= hour >= key[1]:
-                return forecast_hours[key]
+            if key[0] <= date.hour <= key[1]:
+                map_date = map_date.replace(hour=forecast_hours[key])
+                if forecast_hours[key] == 0:
+                    map_date = map_date + timedelta(days=1)
+                return map_date
 
     def run_currents_task(self, data_request):
         loop = asyncio.new_event_loop()
@@ -91,7 +96,7 @@ class Fetcher:
 
     async def fetch_currents_async(self, data_request):
         time_start = data_request["time"][0].replace(hour=self.curr_map_hour(data_request["time"][0].hour))
-        time_end = data_request["time"][1].replace(hour=self.curr_map_later_hour(data_request["time"][1].hour))
+        time_end = self.curr_map_later_date(data_request["time"][1])
         self.currents = copernicusmarine.open_dataset(
             dataset_id=data_request["dataset_id"],
             minimum_longitude=data_request["longitude"][0],
