@@ -157,7 +157,10 @@ def interpolate_for_copernicus(weather, result, request):
     weather_copy = cop_weather.copy()
     for key in cop_weather:
         if key[-5:] != "_mask":
-            weather[key] = cop_weather[key]
+            if key == "zos":
+                weather["tide_height"] = cop_weather[key]
+            else:
+                weather[key] = cop_weather[key]
     try:
         curr_request = request.parse_for_copernicus_currents()["request"]
     except:
