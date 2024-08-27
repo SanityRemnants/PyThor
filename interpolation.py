@@ -26,18 +26,27 @@ def get_copernicus_data(data):
     return lat, lon, time
 
 def check_keys(keys_to_check, wave_wind_not_inter, keys, weather, result, lon_inter, lat_inter, time_inter):
+    wave_and_wind_dict = {
+        "dirpw": "wave_direction",
+        "swh": "wave_height",
+        "perpw": "wave_period",
+        "u": "u",
+        "v": "v",
+        "ws": "wind_speed"
+    }
     for key in keys_to_check:
         if key in wave_wind_not_inter:
             if key == "dirpw":
-                components = [key + "_x", key + "_y"]
+                components = [wave_and_wind_dict[key] + "_x", wave_and_wind_dict[key] + "_y"]
+                og_key = key
                 for c in components:
                     key = c
                     keys.append(key)
                     key_inter = key + "_inter"
                     if key[-1] == "x":
-                        weather[key] = np.cos(np.deg2rad(np.array(wave_wind_not_inter[key[:-2]])))
+                        weather[key] = np.cos(np.deg2rad(np.array(wave_wind_not_inter[og_key])))
                     else:
-                        weather[key] = np.sin(np.deg2rad(np.array(wave_wind_not_inter[key[:-2]])))
+                        weather[key] = np.sin(np.deg2rad(np.array(wave_wind_not_inter[og_key])))
 
                     weather[key + "_mask"] = np.isnan(weather[key]).astype(float)
                     print(weather[key + "_mask"])
@@ -47,19 +56,16 @@ def check_keys(keys_to_check, wave_wind_not_inter, keys, weather, result, lon_in
                     result[key + "_mask" + "_inter"] = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in
                                                         range(len(time_inter))]
             else:
-                keys.append(key)
-                key_inter = key + "_inter"
-                weather[key] = np.array(wave_wind_not_inter[key])
-                weather[key + "_mask"] = np.isnan(weather[key]).astype(float)
-                print(weather[key + "_mask"])
-                keys.append(key + "_mask")
+                keys.append(wave_and_wind_dict[key])
+                key_inter = wave_and_wind_dict[key] + "_inter"
+                weather[wave_and_wind_dict[key]] = np.array(wave_wind_not_inter[key])
+                weather[wave_and_wind_dict[key] + "_mask"] = np.isnan(weather[wave_and_wind_dict[key]]).astype(float)
+                print(weather[wave_and_wind_dict[key] + "_mask"])
+                keys.append(wave_and_wind_dict[key] + "_mask")
                 result[key_inter] = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in
                                      range(len(time_inter))]
-                result[key + "_mask" + "_inter"] = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in
+                result[wave_and_wind_dict[key] + "_mask" + "_inter"] = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in
                                                     range(len(time_inter))]
-
-    normal = {key: value.tolist() if isinstance(value, np.ndarray) else value for key, value in
-              weather.items()}
 
 
 def latlon_interpolation(time, weather, key, lat_grid, lon_grid, lat_inter_grid, lon_inter_grid, res):
@@ -194,8 +200,26 @@ def interpolate(result, interval) :
             key_weather = np.mod(key_weather, 360)
             weather[key] = [[[float(value) for value in row] for row in slice_] for slice_ in key_weather]
 
-    weather["time_inter"] = time_inter.tolist()
-    # weather["time"] = time.tolist()
+        apply_nan_masc(keys_to_iter, weather, land_treshhold)
+        weather_copy = weather.copy()
+        for el in weather_copy:
+            if el[-2:] == "_x":
+                key = el[:-2]
+                key_weather = np.rad2deg(np.arctan2(weather[key + "_y"], weather[key + "_x"]))
+                key_weather = np.mod(key_weather, 360)
+                weather[key] = [[[float(value) for value in row] for row in slice_] for slice_ in key_weather]
+                del weather[key + "_x"]
+                del weather[key + "_y"]
+            elif el == "v":
+                key = "wind_direction"
+                key_weather = np.arctan2(weather["u"], weather["v"]) * (180 / np.pi) + 180
+                key_weather = np.mod(key_weather, 360)
+                weather[key] = [[[float(value) for value in row] for row in slice_] for slice_ in key_weather]
+                del weather["u"]
+                del weather["v"]
+            elif el[-4:]  == "mask":
+                del weather[el]
+
 
     # weather["normal"] = normal
     # weather["lat"] = lat.tolist()

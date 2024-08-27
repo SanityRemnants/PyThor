@@ -45,3 +45,11 @@ Aby uzyskać dane pogodowe należy zadać zapytanie w ponmiższym formacie:
 - sea_current_speed
 - sea_current_direction
 - tide_height
+
+## Instalation
+### Anaconda
+Run: \
+    ```conda create --name <envname> --file requirements.txt``` \
+In order to install all the required libraries for the app to function.
+
+Currently only conda installation is supported due to some libraries not being compatible with pip
