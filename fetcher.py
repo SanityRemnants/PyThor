@@ -58,6 +58,19 @@ class Fetcher:
             if key[0] <= hour <= key[1]:
                 return forecast_hours[key]
 
+    @staticmethod
+    def map_later_hour(hour):
+        """
+        map provided hour to the closest correct forecast hour (00,06,12,18)
+        :param hour: float or int
+        :return:
+        """
+        forecast_hours = {(0, 5): "00", (6, 11): "06",
+                          (12, 17): "12", (18, 23): "18"}
+        for key in forecast_hours:
+            if key[0] >= hour >= key[1]:
+                return forecast_hours[key]
+
     def run_currents_task(self, data_request):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -71,8 +84,8 @@ class Fetcher:
             maximum_longitude=data_request["longitude"][1],
             minimum_latitude=data_request["latitude"][0],
             maximum_latitude=data_request["latitude"][1],
-            start_datetime=data_request["time"][0],
-            end_datetime=data_request["time"][1],
+            start_datetime=self.map_hour(data_request["time"][0]),
+            end_datetime=self.map_later_hour(data_request["time"][1]),
             variables=data_request["variables"], username=self.USERNAME, password=self.PASSWORD)
 
     def fetch_currents(self):
