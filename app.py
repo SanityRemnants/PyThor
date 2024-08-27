@@ -29,7 +29,7 @@ def root():
         return Response(status=400)
     result = Fetcher(data_request).fetch()
 
-    res = interpolate(result, data_request.get_time_interval())
+    res = interpolate(result, data_request)
 
     return res
 

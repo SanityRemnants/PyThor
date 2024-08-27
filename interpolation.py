@@ -2,6 +2,7 @@ from copy import deepcopy
 
 import numpy as np
 from scipy.interpolate import Rbf, RegularGridInterpolator
+import data_request as dr
 
 
 def spherical_to_cartesian(lat, lon, r=1):
@@ -109,7 +110,9 @@ def apply_nan_masc(keys_to_iter, weather, land_treshhold):
             # weather.pop(k)
 
 
-def interpolate_for_copernicus(weather, result, interval):
+def interpolate_for_copernicus(weather, result, request):
+    if isinstance(request, dr.DataRequest):
+        interval = request.get_time_interval()
     cop_weather = {}
     try:
         data = result["copernicus"]
@@ -155,11 +158,27 @@ def interpolate_for_copernicus(weather, result, interval):
     for key in cop_weather:
         if key[-5:] != "_mask":
             weather[key] = cop_weather[key]
+    try:
+        curr_request = request.parse_for_copernicus_currents()["request"]
+    except:
+        return weather
+    for e in curr_request:
+        if e == "sea_current_direction":
+            key_weather = np.arctan2(weather["uo"], weather["vo"]) * (180 / np.pi) + 180
+            key_weather = np.mod(key_weather, 360)
+            weather[e] = key_weather
+        elif e == "sea_current_speed":
+            wind_speed = np.sqrt(weather["uo"] ** 2 + weather["vo"] ** 2)
+            weather[e] = wind_speed
+    del weather["uo"]
+    del weather["vo"]
 
     return weather
 
 
-def interpolate(result, interval):
+def interpolate(result, request):
+    if isinstance(request, dr.DataRequest):
+        interval = request.get_time_interval()
     resoution = 0.15
     land_treshhold = 0.5
     weather = {}
@@ -200,7 +219,7 @@ def interpolate(result, interval):
                 del weather[key + "_y"]
             elif el == "v":
                 key = "wind_direction"
-                key_weather = np.arctan2(weather["u"], weather["v"]) * (180 / np.pi) + 180
+                key_weather=  np.arctan2(weather["u"], weather["v"]) * (180 / np.pi) + 180
                 key_weather = np.mod(key_weather, 360)
                 weather[key] = [[[float(value) for value in row] for row in slice_] for slice_ in key_weather]
                 del weather["u"]
