@@ -90,8 +90,8 @@ class Fetcher:
         loop.close()
 
     async def fetch_currents_async(self, data_request):
-        time_start = data_request["time"][0].replace(hour=self.curr_map_hour(data_request["time"][0]))
-        time_end = data_request["time"][1].replace(hour=self.curr_map_later_hour(data_request["time"][1]))
+        time_start = data_request["time"][0].replace(hour=self.curr_map_hour(data_request["time"][0].hour))
+        time_end = data_request["time"][1].replace(hour=self.curr_map_later_hour(data_request["time"][1].hour))
         self.currents = copernicusmarine.open_dataset(
             dataset_id=data_request["dataset_id"],
             minimum_longitude=data_request["longitude"][0],
