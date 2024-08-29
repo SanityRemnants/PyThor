@@ -129,12 +129,12 @@ def interpolate_for_copernicus(weather, result, request):
             lon_inter = weather["lon_inter"]
             time_inter = weather["time_inter"]
         else:
-            if weather["time_inter"][0] != time[-1]:
+            if time[0] != time[-1]:
                 time_inter = np.arange(time[0], time[-1], int(interval * 3600))
             else:
                 time_inter = time
             lat_inter = np.arange(lat[0], lat[-1], resoution)
-            lon_inter = np.(lon[0], lon[-1], resoution)
+            lon_inter = np.arange(lon[0], lon[-1], resoution)
             weather["time_inter"] = time_inter.tolist()
             weather["lat_inter"] = lat_inter.tolist()
             weather["lon_inter"] = lon_inter.tolist()
@@ -180,8 +180,8 @@ def interpolate_for_copernicus(weather, result, request):
         elif e == "sea_current_speed":
             wind_speed = np.sqrt(weather["uo"] ** 2 + weather["vo"] ** 2)
             weather[e] = wind_speed
-    del weather["uo"]
-    del weather["vo"]
+    # del weather["uo"]
+    # del weather["vo"]
 
     return weather
 
@@ -247,4 +247,4 @@ def interpolate(result, request):
         weather["lat_inter"] = lat_inter.tolist()
         weather["lon_inter"] = lon_inter.tolist()
 
-    return interpolate_for_copernicus(weather, result, interval)
+    return interpolate_for_copernicus(weather, result, request)
