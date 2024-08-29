@@ -151,8 +151,8 @@ class Fetcher:
         now = datetime.now().astimezone(pytz.timezone('America/New_York'))
         res = {}
         time_start, time_end = self.__request.get_time()
-        time_start, time_end = time_start.astimezone(pytz.timezone('America/New_York')), time_end.astimezone(
-            pytz.timezone('America/New_York'))
+        time_start, time_end = time_start.astimezone(pytz.timezone('UTC')), time_end.astimezone(
+            pytz.timezone('UTC'))
         forecast_time = time_start
         i = 0
         j = 0
@@ -236,7 +236,7 @@ class Fetcher:
         if len(self.__request.tide_variables) > 0:
             tides = self.fetch_tide().to_dict()
             res["copernicus"]["tides"] = tides
-        if len(self.__request.currents_variables) > 0:
+        if self.__request.currents_variables != [[],[]]:
             currents = self.fetch_currents().to_dict()
             res["copernicus"]["currents"] = currents
 
