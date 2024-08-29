@@ -153,10 +153,10 @@ def interpolate_for_copernicus(weather, result, request):
                 latlon_interpolation(time, cop_weather, key, lat_grid, lon_grid, lat_inter_grid, lon_inter_grid, res)
                 time_interpolation(time, lat_inter, lon_inter, res, key, time_inter, result, cop_weather)
             else:
-                cop_weather[key] =  reduced_array
-                weather["time_inter"] = time
-                weather["lat_inter"] = lat
-                weather["lon_inter"] = lon
+                cop_weather[key] =  [[[float(value[0]) for value in row] for row in slice_] for slice_ in reduced_array]
+                weather["time_inter"] = time.tolist()
+                weather["lat_inter"] = lat_inter.tolist()
+                weather["lon_inter"] = lon_inter.tolist()
 
 
     keys_to_iter = deepcopy(list(cop_weather.keys()))
@@ -176,10 +176,10 @@ def interpolate_for_copernicus(weather, result, request):
         if e == "sea_current_direction":
             key_weather = np.arctan2(weather["uo"], weather["vo"]) * (180 / np.pi) + 180
             key_weather = np.mod(key_weather, 360)
-            weather[e] = key_weather
+            weather[e] = [[[float(value) for value in row] for row in slice_] for slice_ in key_weather]
         elif e == "sea_current_speed":
             wind_speed = np.sqrt(weather["uo"] ** 2 + weather["vo"] ** 2)
-            weather[e] = wind_speed
+            weather[e] = [[[float(value) for value in row] for row in slice_] for slice_ in wind_speed]
     # del weather["uo"]
     # del weather["vo"]
 
