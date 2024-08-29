@@ -97,6 +97,7 @@ class Fetcher:
     async def fetch_currents_async(self, data_request):
         time_start = data_request["time"][0].replace(hour=self.curr_map_hour(data_request["time"][0].hour))
         time_end = self.curr_map_later_date(data_request["time"][1])
+        time_start, time_end = time_start.astimezone(pytz.timezone('UTC')).replace(tzinfo=None), time_end.astimezone(pytz.timezone('UTC')).replace(tzinfo=None)
         self.currents = copernicusmarine.open_dataset(
             dataset_id=data_request["dataset_id"],
             minimum_longitude=data_request["longitude"][0],
@@ -123,14 +124,17 @@ class Fetcher:
         loop.close()
 
     async def fetch_tide_async(self, data_request):
+        time_start = data_request["time"][0]
+        time_end = data_request["time"][1]
+        time_start, time_end = time_start.astimezone(pytz.timezone('UTC')).replace(tzinfo=None), time_end.astimezone(pytz.timezone('UTC')).replace(tzinfo=None)
         self.tide = copernicusmarine.open_dataset(
             dataset_id=data_request["dataset_id"],
             minimum_longitude=data_request["longitude"][0],
             maximum_longitude=data_request["longitude"][1],
             minimum_latitude=data_request["latitude"][0],
             maximum_latitude=data_request["latitude"][1],
-            start_datetime=data_request["time"][0],
-            end_datetime=data_request["time"][1],
+            start_datetime=time_start,
+            end_datetime=time_end,
             variables=data_request["variables"], username=self.USERNAME, password=self.PASSWORD)
 
     def fetch_tide(self):
