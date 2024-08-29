@@ -129,12 +129,12 @@ def interpolate_for_copernicus(weather, result, request):
             lon_inter = weather["lon_inter"]
             time_inter = weather["time_inter"]
         else:
-            if time[0] != time[-1]:
+            if weather["time_inter"][0] != time[-1]:
                 time_inter = np.arange(time[0], time[-1], int(interval * 3600))
             else:
                 time_inter = time
             lat_inter = np.arange(lat[0], lat[-1], resoution)
-            lon_inter = np.arange(lon[0], lon[-1], resoution)
+            lon_inter = np.(lon[0], lon[-1], resoution)
             weather["time_inter"] = time_inter.tolist()
             weather["lat_inter"] = lat_inter.tolist()
             weather["lon_inter"] = lon_inter.tolist()
@@ -154,6 +154,7 @@ def interpolate_for_copernicus(weather, result, request):
                 time_interpolation(time, lat_inter, lon_inter, res, key, time_inter, result, cop_weather)
             else:
                 cop_weather[key] =  reduced_array
+                weather["time_inter"] = time
 
 
     keys_to_iter = deepcopy(list(cop_weather.keys()))
