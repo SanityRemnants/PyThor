@@ -155,6 +155,8 @@ def interpolate_for_copernicus(weather, result, request):
             else:
                 cop_weather[key] =  reduced_array
                 weather["time_inter"] = time
+                weather["lat_inter"] = lat
+                weather["lon_inter"] = lon
 
 
     keys_to_iter = deepcopy(list(cop_weather.keys()))
