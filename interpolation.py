@@ -86,14 +86,15 @@ def latlon_interpolation(time, weather, key, lat_grid, lon_grid, lat_inter_grid,
         res[k] = interp_spatial(x_inter, y_inter, z_inter)
 
 
-def time_interpolation(time, lat_inter, lon_inter, res, key, time_inter, result, weather):
+def time_interpolation(time, lat_inter, lon_inter, res, key, time_inter, weather):
     interpolator = RegularGridInterpolator((time, lat_inter, lon_inter), res)
     key_inter = key + "_inter"
+    result = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in range(len(time_inter))]
     for k in range(len(time_inter)):
         for i in range(len(lat_inter)):
             for j in range(len(lon_inter)):
-                result[key_inter][k][i][j] = interpolator([time_inter[k], lat_inter[i], lon_inter[j]])
-    weather[key] = [[[float(value[0]) for value in row] for row in slice_] for slice_ in result[key_inter]]
+                result[k][i][j] = interpolator([time_inter[k], lat_inter[i], lon_inter[j]])
+    weather[key] = [[[float(value[0]) for value in row] for row in slice_] for slice_ in result]
 
 
 def apply_nan_masc(keys_to_iter, weather, land_treshhold):
@@ -159,8 +160,8 @@ def interpolate_for_copernicus(weather, result, request):
                                                     range(len(time_inter))]
                 latlon_interpolation(time, cop_weather, key, lat_grid, lon_grid, lat_inter_grid, lon_inter_grid, res)
                 latlon_interpolation(time, cop_weather, key + "_mask", lat_grid, lon_grid, lat_inter_grid, lon_inter_grid, res)
-                time_interpolation(time, lat_inter, lon_inter, res, key, time_inter, result, cop_weather)
-                time_interpolation(time, lat_inter, lon_inter, res, key + "_mask", time_inter, result, cop_weather)
+                time_interpolation(time, lat_inter, lon_inter, res, key, time_inter, cop_weather)
+                time_interpolation(time, lat_inter, lon_inter, res, key + "_mask", time_inter, cop_weather)
             else:
                 cop_weather[key] =  [[[float(value) for value in row] for row in slice_] for slice_ in reduced_array]
                 weather["time_inter"] = time.tolist()
@@ -224,7 +225,7 @@ def interpolate(result, request):
 
         for key in keys:
             latlon_interpolation(time, weather, key, lat_grid, lon_grid, lat_inter_grid, lon_inter_grid, res)
-            time_interpolation(time, lat_inter, lon_inter, res, key, time_inter, result, weather)
+            time_interpolation(time, lat_inter, lon_inter, res, key, time_inter, weather)
 
         keys_to_iter = deepcopy(list(weather.keys()))
 
