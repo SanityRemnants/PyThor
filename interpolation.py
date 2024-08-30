@@ -1,6 +1,7 @@
 from copy import deepcopy
 
 import numpy as np
+import yaml
 from scipy.interpolate import Rbf, RegularGridInterpolator
 import data_request as dr
 
@@ -113,6 +114,9 @@ def apply_nan_masc(keys_to_iter, weather, land_treshhold):
 def interpolate_for_copernicus(weather, result, request):
     if isinstance(request, dr.DataRequest):
         interval = request.get_time_interval()
+    with open("config.yaml", "r") as f:
+        config = yaml.safe_load(f)
+        resolution = config["resolution"]
     cop_weather = {}
     try:
         data = result["copernicus"]
@@ -189,14 +193,16 @@ def interpolate_for_copernicus(weather, result, request):
 def interpolate(result, request):
     if isinstance(request, dr.DataRequest):
         interval = request.get_time_interval()
-    resoution = 0.15
+    with open("config.yaml", "r") as f:
+        config = yaml.safe_load(f)
+        resolution = config["resolution"]
     land_treshhold = 0.5
     weather = {}
     wave_wind_not_inter = result["waves_and_wind"]
     if wave_wind_not_inter is not None:
         lat, lon, time = get_data(wave_wind_not_inter)
-        lat_inter = np.arange(lat[0], lat[-1], resoution)
-        lon_inter = np.arange(lon[0], lon[-1], resoution)
+        lat_inter = np.arange(lat[0], lat[-1], resolution)
+        lon_inter = np.arange(lon[0], lon[-1], resolution)
         if time[0] != time[-1]:
             time_inter = np.arange(time[0], time[-1], int(interval * 3600))
         else:
