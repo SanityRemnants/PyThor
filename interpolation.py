@@ -150,11 +150,13 @@ def interpolate_for_copernicus(weather, result, request):
             result[key_inter] = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in
                                  range(len(time_inter))]
             reduced_array = [sublist[0] for sublist in element["data_vars"][key]["data"]]
-            if 1 == 0:
+            if True:
                 cop_weather[key] = np.array(reduced_array)
                 cop_weather[key + "_mask"] = np.isnan(reduced_array).astype(float)
                 latlon_interpolation(time, cop_weather, key, lat_grid, lon_grid, lat_inter_grid, lon_inter_grid, res)
+                latlon_interpolation(time, cop_weather, key + "_mask", lat_grid, lon_grid, lat_inter_grid, lon_inter_grid, res)
                 time_interpolation(time, lat_inter, lon_inter, res, key, time_inter, result, cop_weather)
+                time_interpolation(time, lat_inter, lon_inter, res, key + "_mask", time_inter, result, cop_weather)
             else:
                 cop_weather[key] =  [[[float(value) for value in row] for row in slice_] for slice_ in reduced_array]
                 weather["time_inter"] = time.tolist()
