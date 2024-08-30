@@ -134,7 +134,7 @@ def interpolate_for_copernicus(weather, result, request):
             time_inter = weather["time_inter"]
         else:
             if time[0] != time[-1]:
-                time_inter = np.arange(time[0], time[-1], int(interval * 3600))
+                time_inter = np.arange(time[0], time[-1], int(interval * 60))
             else:
                 time_inter = time
             lat_inter = np.arange(lat[0], lat[-1], resolution)
@@ -206,7 +206,7 @@ def interpolate(result, request):
         lat_inter = np.arange(lat[0], lat[-1], resolution)
         lon_inter = np.arange(lon[0], lon[-1], resolution)
         if time[0] != time[-1]:
-            time_inter = np.arange(time[0], time[-1], int(interval * 3600))
+            time_inter = np.arange(time[0], time[-1], int(interval * 60))
         else:
             time_inter = time
 
