@@ -122,7 +122,6 @@ def interpolate_for_copernicus(weather, result, request):
         data = result["copernicus"]
     except:
         return weather
-    resoution = 0.15
     land_treshhold = 0.5
     for el in data:
         element = data[el]
@@ -137,8 +136,8 @@ def interpolate_for_copernicus(weather, result, request):
                 time_inter = np.arange(time[0], time[-1], int(interval * 3600))
             else:
                 time_inter = time
-            lat_inter = np.arange(lat[0], lat[-1], resoution)
-            lon_inter = np.arange(lon[0], lon[-1], resoution)
+            lat_inter = np.arange(lat[0], lat[-1], resolution)
+            lon_inter = np.arange(lon[0], lon[-1], resolution)
             weather["time_inter"] = time_inter.tolist()
             weather["lat_inter"] = lat_inter.tolist()
             weather["lon_inter"] = lon_inter.tolist()
