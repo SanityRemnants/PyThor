@@ -95,9 +95,10 @@ class Fetcher:
         loop.close()
 
     async def fetch_currents_async(self, data_request):
-        time_start = data_request["time"][0].replace(hour=self.curr_map_hour(data_request["time"][0].hour))
-        time_end = self.curr_map_later_date(data_request["time"][1])
-        time_start, time_end = time_start.astimezone(pytz.timezone('UTC')).replace(tzinfo=None), time_end.astimezone(pytz.timezone('UTC')).replace(tzinfo=None)
+        time_start, time_end = data_request["time"][0].astimezone(pytz.timezone('UTC')).replace(tzinfo=None), data_request["time"][1].astimezone(
+            pytz.timezone('UTC')).replace(tzinfo=None)
+        time_start = time_start.replace(hour=self.curr_map_hour(data_request["time"][0].hour))
+        time_end = self.curr_map_later_date(time_end)
         self.currents = copernicusmarine.open_dataset(
             dataset_id=data_request["dataset_id"],
             minimum_longitude=data_request["longitude"][0],
