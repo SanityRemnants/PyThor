@@ -185,8 +185,8 @@ def interpolate_for_copernicus(weather, result, request):
         elif e == "sea_current_speed":
             wind_speed = np.sqrt(np.power(weather["uo"], 2) + np.power(weather["vo"], 2))
             weather[e] = [[[float(value) for value in row] for row in slice_] for slice_ in wind_speed]
-    # del weather["uo"]
-    # del weather["vo"]
+    del weather["uo"]
+    del weather["vo"]
 
     return weather
 
