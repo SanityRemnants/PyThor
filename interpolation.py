@@ -1,7 +1,9 @@
 from copy import deepcopy
 
 import numpy as np
+import yaml
 from scipy.interpolate import Rbf, RegularGridInterpolator
+import data_request as dr
 
 
 def spherical_to_cartesian(lat, lon, r=1):
@@ -84,14 +86,15 @@ def latlon_interpolation(time, weather, key, lat_grid, lon_grid, lat_inter_grid,
         res[k] = interp_spatial(x_inter, y_inter, z_inter)
 
 
-def time_interpolation(time, lat_inter, lon_inter, res, key, time_inter, result, weather):
+def time_interpolation(time, lat_inter, lon_inter, res, key, time_inter, weather):
     interpolator = RegularGridInterpolator((time, lat_inter, lon_inter), res)
     key_inter = key + "_inter"
+    result = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in range(len(time_inter))]
     for k in range(len(time_inter)):
         for i in range(len(lat_inter)):
             for j in range(len(lon_inter)):
-                result[key_inter][k][i][j] = interpolator([time_inter[k], lat_inter[i], lon_inter[j]])
-    weather[key] = [[[float(value[0]) for value in row] for row in slice_] for slice_ in result[key_inter]]
+                result[k][i][j] = interpolator([time_inter[k], lat_inter[i], lon_inter[j]])
+    weather[key] = [[[float(value[0]) for value in row] for row in slice_] for slice_ in result]
 
 
 def apply_nan_masc(keys_to_iter, weather, land_treshhold):
@@ -99,7 +102,6 @@ def apply_nan_masc(keys_to_iter, weather, land_treshhold):
         if "mask" in k:
             key_to_nan = k.replace("_mask", "")
             for t in range(len(weather[key_to_nan])):
-
                 for l in range(len(weather[key_to_nan][t])):
                     wl = weather[k][t][l]
                     for lt in range(len(weather[key_to_nan][t][l])):
@@ -109,13 +111,18 @@ def apply_nan_masc(keys_to_iter, weather, land_treshhold):
             # weather.pop(k)
 
 
-def interpolate_for_copernicus(weather, result, interval):
+def interpolate_for_copernicus(weather, result, request):
+    if isinstance(request, dr.DataRequest):
+        interval = request.get_time_interval()
+    with open("config.yaml", "r") as f:
+        config = yaml.safe_load(f)
+        resolution = config["resolution"]
+        land_treshhold = config["land_treshhold"]
     cop_weather = {}
     try:
         data = result["copernicus"]
     except:
         return weather
-    resoution = 0.15
     land_treshhold = 0.5
     for el in data:
         element = data[el]
@@ -127,11 +134,11 @@ def interpolate_for_copernicus(weather, result, interval):
             time_inter = weather["time_inter"]
         else:
             if time[0] != time[-1]:
-                time_inter = np.arange(time[0], time[-1], int(interval * 3600))
+                time_inter = np.arange(time[0], time[-1], int(interval * 60))
             else:
                 time_inter = time
-            lat_inter = np.arange(lat[0], lat[-1], resoution)
-            lon_inter = np.arange(lon[0], lon[-1], resoution)
+            lat_inter = np.arange(lat[0], lat[-1], resolution)
+            lon_inter = np.arange(lon[0], lon[-1], resolution)
             weather["time_inter"] = time_inter.tolist()
             weather["lat_inter"] = lat_inter.tolist()
             weather["lon_inter"] = lon_inter.tolist()
@@ -143,32 +150,58 @@ def interpolate_for_copernicus(weather, result, interval):
             key_inter = key + "_inter"
             result[key_inter] = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in
                                  range(len(time_inter))]
-            cop_weather[key] = np.array(element["data_vars"][key]["data"][0])
-            cop_weather[key + "_mask"] = np.isnan(element["data_vars"][key]["data"]).astype(float)
+            reduced_array = [sublist[0] for sublist in element["data_vars"][key]["data"]]
+            cop_weather[key] = np.array(reduced_array)
+            cop_weather[key + "_mask"] = np.isnan(cop_weather[key]).astype(float)
             latlon_interpolation(time, cop_weather, key, lat_grid, lon_grid, lat_inter_grid, lon_inter_grid, res)
-            time_interpolation(time, lat_inter, lon_inter, res, key, time_inter, result, cop_weather)
+            latlon_interpolation(time, cop_weather, key + "_mask", lat_grid, lon_grid, lat_inter_grid, lon_inter_grid, res)
+            time_interpolation(time, lat_inter, lon_inter, res, key, time_inter, cop_weather)
+            time_interpolation(time, lat_inter, lon_inter, res, key + "_mask", time_inter, cop_weather)
+
 
     keys_to_iter = deepcopy(list(cop_weather.keys()))
     apply_nan_masc(keys_to_iter, cop_weather, land_treshhold)
     weather_copy = cop_weather.copy()
     for key in cop_weather:
         if key[-5:] != "_mask":
-            weather[key] = cop_weather[key]
+            if key == "zos":
+                weather["tide_height"] = cop_weather[key]
+            else:
+                weather[key] = cop_weather[key]
+    try:
+        curr_request = request.parse_for_copernicus_currents()["request"]
+    except:
+        return weather
+    for e in curr_request:
+        if e == "sea_current_direction":
+            key_weather = np.arctan2(weather["uo"], weather["vo"]) * (180 / np.pi) + 180
+            key_weather = np.mod(key_weather, 360)
+            weather[e] = [[[float(value) for value in row] for row in slice_] for slice_ in key_weather]
+        elif e == "sea_current_speed":
+            wind_speed = np.sqrt(np.power(weather["uo"], 2) + np.power(weather["vo"], 2))
+            weather[e] = [[[float(value) for value in row] for row in slice_] for slice_ in wind_speed]
+    if "uo" in weather:
+        del weather["uo"]
+        del weather["vo"]
 
     return weather
 
 
-def interpolate(result, interval):
-    resoution = 0.15
-    land_treshhold = 0.5
+def interpolate(result, request):
+    if isinstance(request, dr.DataRequest):
+        interval = request.get_time_interval()
+    with open("config.yaml", "r") as f:
+        config = yaml.safe_load(f)
+        resolution = config["resolution"]
+        land_treshhold = config["land_treshhold"]
     weather = {}
     wave_wind_not_inter = result["waves_and_wind"]
     if wave_wind_not_inter is not None:
         lat, lon, time = get_data(wave_wind_not_inter)
-        lat_inter = np.arange(lat[0], lat[-1], resoution)
-        lon_inter = np.arange(lon[0], lon[-1], resoution)
+        lat_inter = np.arange(lat[0], lat[-1], resolution)
+        lon_inter = np.arange(lon[0], lon[-1], resolution)
         if time[0] != time[-1]:
-            time_inter = np.arange(time[0], time[-1], int(interval * 3600))
+            time_inter = np.arange(time[0], time[-1], int(interval * 60))
         else:
             time_inter = time
 
@@ -183,7 +216,7 @@ def interpolate(result, interval):
 
         for key in keys:
             latlon_interpolation(time, weather, key, lat_grid, lon_grid, lat_inter_grid, lon_inter_grid, res)
-            time_interpolation(time, lat_inter, lon_inter, res, key, time_inter, result, weather)
+            time_interpolation(time, lat_inter, lon_inter, res, key, time_inter, weather)
 
         keys_to_iter = deepcopy(list(weather.keys()))
 
@@ -199,7 +232,7 @@ def interpolate(result, interval):
                 del weather[key + "_y"]
             elif el == "v":
                 key = "wind_direction"
-                key_weather = np.arctan2(weather["u"], weather["v"]) * (180 / np.pi) + 180
+                key_weather=  np.arctan2(weather["u"], weather["v"]) * (180 / np.pi) + 180
                 key_weather = np.mod(key_weather, 360)
                 weather[key] = [[[float(value) for value in row] for row in slice_] for slice_ in key_weather]
                 del weather["u"]
@@ -217,4 +250,4 @@ def interpolate(result, interval):
         weather["lat_inter"] = lat_inter.tolist()
         weather["lon_inter"] = lon_inter.tolist()
 
-    return interpolate_for_copernicus(weather, result, interval)
+    return interpolate_for_copernicus(weather, result, request)

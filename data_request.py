@@ -32,14 +32,15 @@ class DataRequest:
 
         tide_variables_dict = {"tide_height": "zos"}  # cmems_mod_glo_phy_anfc_0.083deg_PT1H-m
         noaa_vars = []
-        curr_vars = []
+        curr_vars = [[],[]]
         tide_vars = []
         for v in request_vars:
             if v in wave_and_wind_dict.keys():
                 for name in wave_and_wind_dict[v]:
                     noaa_vars.append(name)
             if v in curr_variables:
-                curr_vars = curr_variables_names.copy()
+                curr_vars[1].append(v)
+                curr_vars[0] = curr_variables_names.copy()
             if v in tide_variables_dict:
                 tide_vars.append(tide_variables_dict[v])
         return noaa_vars, curr_vars, tide_vars
@@ -113,7 +114,8 @@ class DataRequest:
             "longitude": [self.__longitude.start, self.__longitude.end],
             "latitude": [self.__latitude.start, self.__latitude.end],
             "time": [self.__time.start, self.__time.end],
-            "variables": self.currents_variables
+            "variables": self.currents_variables[0],
+            "request": self.currents_variables[1]
         }
         return result
 

@@ -23,13 +23,13 @@ def root():
     data_request = DataRequest(request.args.get('latitude_start'), request.args.get('latitude_end'),
                                request.args.get('longitude_start'), request.args.get('longitude_end'),
                                request.args.get('time_start'), request.args.get('time_end'),
-                               request.args.get('interval', 2),
+                               request.args.get('interval', 60),
                                request.args.get('variables', "").replace(" ", "").split(","))
     if not data_request.is_valid():
         return Response(status=400)
     result = Fetcher(data_request).fetch()
 
-    res = interpolate(result, data_request.get_time_interval())
+    res = interpolate(result, data_request)
 
     return res
 

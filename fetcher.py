@@ -58,6 +58,36 @@ class Fetcher:
             if key[0] <= hour <= key[1]:
                 return forecast_hours[key]
 
+    @staticmethod
+    def curr_map_hour(hour):
+        """
+        map provided hour to the closest correct forecast hour (00,06,12,18)
+        :param hour: float or int
+        :return:
+        """
+        forecast_hours = {(0, 5): 0, (6, 11): 6,
+                          (12, 17): 12, (18, 23): 18}
+        for key in forecast_hours:
+            if key[0] <= hour <= key[1]:
+                return forecast_hours[key]
+
+    @staticmethod
+    def curr_map_later_date(date):
+        """
+        map provided hour to the closest correct forecast hour (00,06,12,18)
+        :param date: datetime
+        :return:
+        """
+        map_date = date
+        forecast_hours = {(0, 5): 6, (6, 11): 12,
+                          (12, 17): 18, (18, 23): 0}
+        for key in forecast_hours:
+            if key[0] <= date.hour <= key[1]:
+                map_date = map_date.replace(hour=forecast_hours[key])
+                if forecast_hours[key] == 0:
+                    map_date = map_date + timedelta(days=1)
+                return map_date
+
     def run_currents_task(self, data_request):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -65,14 +95,18 @@ class Fetcher:
         loop.close()
 
     async def fetch_currents_async(self, data_request):
+        time_start, time_end = data_request["time"][0].astimezone(pytz.timezone('UTC')).replace(tzinfo=None), data_request["time"][1].astimezone(
+            pytz.timezone('UTC')).replace(tzinfo=None)
+        time_start = time_start.replace(hour=self.curr_map_hour(data_request["time"][0].hour))
+        time_end = self.curr_map_later_date(time_end)
         self.currents = copernicusmarine.open_dataset(
             dataset_id=data_request["dataset_id"],
             minimum_longitude=data_request["longitude"][0],
             maximum_longitude=data_request["longitude"][1],
             minimum_latitude=data_request["latitude"][0],
             maximum_latitude=data_request["latitude"][1],
-            start_datetime=data_request["time"][0],
-            end_datetime=data_request["time"][1],
+            start_datetime=time_start,
+            end_datetime=time_end,
             variables=data_request["variables"], username=self.USERNAME, password=self.PASSWORD)
 
     def fetch_currents(self):
@@ -91,14 +125,17 @@ class Fetcher:
         loop.close()
 
     async def fetch_tide_async(self, data_request):
+        time_start = data_request["time"][0]
+        time_end = data_request["time"][1]
+        time_start, time_end = time_start.astimezone(pytz.timezone('UTC')).replace(tzinfo=None), time_end.astimezone(pytz.timezone('UTC')).replace(tzinfo=None)
         self.tide = copernicusmarine.open_dataset(
             dataset_id=data_request["dataset_id"],
             minimum_longitude=data_request["longitude"][0],
             maximum_longitude=data_request["longitude"][1],
             minimum_latitude=data_request["latitude"][0],
             maximum_latitude=data_request["latitude"][1],
-            start_datetime=data_request["time"][0],
-            end_datetime=data_request["time"][1],
+            start_datetime=time_start,
+            end_datetime=time_end,
             variables=data_request["variables"], username=self.USERNAME, password=self.PASSWORD)
 
     def fetch_tide(self):
@@ -119,8 +156,8 @@ class Fetcher:
         now = datetime.now().astimezone(pytz.timezone('America/New_York'))
         res = {}
         time_start, time_end = self.__request.get_time()
-        time_start, time_end = time_start.astimezone(pytz.timezone('America/New_York')), time_end.astimezone(
-            pytz.timezone('America/New_York'))
+        time_start, time_end = time_start.astimezone(pytz.timezone('UTC')), time_end.astimezone(
+            pytz.timezone('UTC'))
         forecast_time = time_start
         i = 0
         j = 0
@@ -204,7 +241,7 @@ class Fetcher:
         if len(self.__request.tide_variables) > 0:
             tides = self.fetch_tide().to_dict()
             res["copernicus"]["tides"] = tides
-        if len(self.__request.currents_variables) > 0:
+        if self.__request.currents_variables != [[],[]]:
             currents = self.fetch_currents().to_dict()
             res["copernicus"]["currents"] = currents
 
