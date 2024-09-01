@@ -117,6 +117,7 @@ def interpolate_for_copernicus(weather, result, request):
     with open("config.yaml", "r") as f:
         config = yaml.safe_load(f)
         resolution = config["resolution"]
+        land_treshhold = config["land_treshhold"]
     cop_weather = {}
     try:
         data = result["copernicus"]
@@ -150,18 +151,12 @@ def interpolate_for_copernicus(weather, result, request):
             result[key_inter] = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in
                                  range(len(time_inter))]
             reduced_array = [sublist[0] for sublist in element["data_vars"][key]["data"]]
-            if True:
-                cop_weather[key] = np.array(reduced_array)
-                cop_weather[key + "_mask"] = np.isnan(cop_weather[key]).astype(float)
-                latlon_interpolation(time, cop_weather, key, lat_grid, lon_grid, lat_inter_grid, lon_inter_grid, res)
-                latlon_interpolation(time, cop_weather, key + "_mask", lat_grid, lon_grid, lat_inter_grid, lon_inter_grid, res)
-                time_interpolation(time, lat_inter, lon_inter, res, key, time_inter, cop_weather)
-                time_interpolation(time, lat_inter, lon_inter, res, key + "_mask", time_inter, cop_weather)
-            else:
-                cop_weather[key] =  [[[float(value) for value in row] for row in slice_] for slice_ in reduced_array]
-                weather["time_inter"] = time.tolist()
-                weather["lat_inter"] = lat_inter.tolist()
-                weather["lon_inter"] = lon_inter.tolist()
+            cop_weather[key] = np.array(reduced_array)
+            cop_weather[key + "_mask"] = np.isnan(cop_weather[key]).astype(float)
+            latlon_interpolation(time, cop_weather, key, lat_grid, lon_grid, lat_inter_grid, lon_inter_grid, res)
+            latlon_interpolation(time, cop_weather, key + "_mask", lat_grid, lon_grid, lat_inter_grid, lon_inter_grid, res)
+            time_interpolation(time, lat_inter, lon_inter, res, key, time_inter, cop_weather)
+            time_interpolation(time, lat_inter, lon_inter, res, key + "_mask", time_inter, cop_weather)
 
 
     keys_to_iter = deepcopy(list(cop_weather.keys()))
@@ -185,8 +180,9 @@ def interpolate_for_copernicus(weather, result, request):
         elif e == "sea_current_speed":
             wind_speed = np.sqrt(np.power(weather["uo"], 2) + np.power(weather["vo"], 2))
             weather[e] = [[[float(value) for value in row] for row in slice_] for slice_ in wind_speed]
-    del weather["uo"]
-    del weather["vo"]
+    if "uo" in weather:
+        del weather["uo"]
+        del weather["vo"]
 
     return weather
 
@@ -197,7 +193,7 @@ def interpolate(result, request):
     with open("config.yaml", "r") as f:
         config = yaml.safe_load(f)
         resolution = config["resolution"]
-    land_treshhold = 0.5
+        land_treshhold = config["land_treshhold"]
     weather = {}
     wave_wind_not_inter = result["waves_and_wind"]
     if wave_wind_not_inter is not None:
