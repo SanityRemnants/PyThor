@@ -25,11 +25,12 @@ def root():
                                request.args.get('time_start'), request.args.get('time_end'),
                                request.args.get('interval', 60),
                                request.args.get('variables', "").replace(" ", "").split(","))
+    time = [int(request.args.get('time_start')), int(request.args.get('time_end'))]
     if not data_request.is_valid():
         return Response(status=400)
     result = Fetcher(data_request).fetch()
 
-    res = interpolate(result, data_request)
+    res = interpolate(result, data_request, time)
 
     return res
 

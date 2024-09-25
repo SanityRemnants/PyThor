@@ -111,7 +111,7 @@ def apply_nan_masc(keys_to_iter, weather, land_treshhold):
             # weather.pop(k)
 
 
-def interpolate_for_copernicus(weather, result, request):
+def interpolate_for_copernicus(weather, result, request, requested_time):
     if isinstance(request, dr.DataRequest):
         interval = request.get_time_interval()
     with open("config.yaml", "r") as f:
@@ -133,10 +133,10 @@ def interpolate_for_copernicus(weather, result, request):
             lon_inter = weather["lon_inter"]
             time_inter = weather["time_inter"]
         else:
-            if time[0] != time[-1]:
-                time_inter = np.arange(time[0], time[-1], int(interval * 60))
+            if requested_time[0] != requested_time[-1]:
+                time_inter = np.arange(requested_time[0], requested_time[-1], int(interval * 60))
             else:
-                time_inter = time
+                time_inter = requested_time[0]
             lat_inter = np.arange(lat[0], lat[-1], resolution)
             lon_inter = np.arange(lon[0], lon[-1], resolution)
             weather["time_inter"] = time_inter.tolist()
@@ -187,7 +187,7 @@ def interpolate_for_copernicus(weather, result, request):
     return weather
 
 
-def interpolate(result, request):
+def interpolate(result, request, requested_time):
     if isinstance(request, dr.DataRequest):
         interval = request.get_time_interval()
     with open("config.yaml", "r") as f:
@@ -200,10 +200,10 @@ def interpolate(result, request):
         lat, lon, time = get_data(wave_wind_not_inter)
         lat_inter = np.arange(lat[0], lat[-1], resolution)
         lon_inter = np.arange(lon[0], lon[-1], resolution)
-        if time[0] != time[-1]:
-            time_inter = np.arange(time[0], time[-1], int(interval * 60))
+        if requested_time[0] != requested_time[-1]:
+            time_inter = np.arange(requested_time[0], requested_time[-1], int(interval * 60))
         else:
-            time_inter = time
+            time_inter = requested_time[0]
 
         keys_to_check = ["dirpw", "swh", "perpw", "u", "v", "ws"]
         keys = []
@@ -250,4 +250,4 @@ def interpolate(result, request):
         weather["lat_inter"] = lat_inter.tolist()
         weather["lon_inter"] = lon_inter.tolist()
 
-    return interpolate_for_copernicus(weather, result, request)
+    return interpolate_for_copernicus(weather, result, request, requested_time)
