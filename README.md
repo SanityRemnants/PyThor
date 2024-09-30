@@ -21,9 +21,9 @@ To obtain weather data, please submit a query in the following format:
 - **latitude_end** - end of latitude in dotted floating point format
 - **longitude_start** - longitude start in dotted floating point format
 - **longitude_end** - end of longitude in dotted floating point format
-- **variables** - expected weather data separated by a comma
+- **variables** - expected weather data parameters separated by a commas
 - **time_start** - the beginning of the time for which we want to obtain data in Unix time format
-- **time_end** - end of time for which we want to obtain data in Unix time format (providing the same value as in the **time_start** field will return data for the time point)
+- **time_end** - end of time for which we want to obtain data in Unix time format (providing the same value as in the **time_start** field will return data for a point in time)
 
 
 ## sample query:
