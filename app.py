@@ -1,8 +1,4 @@
-from copy import deepcopy
-import numpy as np
 from flask import Flask, request, Response
-import copernicusmarine
-from scipy.interpolate import RegularGridInterpolator, Rbf
 
 from data_request import DataRequest
 from fetcher import Fetcher
@@ -36,6 +32,5 @@ def root():
 
 
 if __name__ == '__main__':
-
     app.run()
 # print(fetch_wave(0, 0))

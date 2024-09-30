@@ -52,7 +52,6 @@ def check_keys(keys_to_check, wave_wind_not_inter, keys, weather, result, lon_in
                         weather[key] = np.sin(np.deg2rad(np.array(wave_wind_not_inter[og_key])))
 
                     weather[key + "_mask"] = np.isnan(weather[key]).astype(float)
-                    print(weather[key + "_mask"])
                     keys.append(key + "_mask")
                     result[key_inter] = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in
                                          range(len(time_inter))]
@@ -63,7 +62,6 @@ def check_keys(keys_to_check, wave_wind_not_inter, keys, weather, result, lon_in
                 key_inter = wave_and_wind_dict[key] + "_inter"
                 weather[wave_and_wind_dict[key]] = np.array(wave_wind_not_inter[key])
                 weather[wave_and_wind_dict[key] + "_mask"] = np.isnan(weather[wave_and_wind_dict[key]]).astype(float)
-                print(weather[wave_and_wind_dict[key] + "_mask"])
                 keys.append(wave_and_wind_dict[key] + "_mask")
                 result[key_inter] = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in
                                      range(len(time_inter))]
@@ -188,6 +186,7 @@ def interpolate_for_copernicus(weather, result, request, requested_time):
 
 
 def interpolate(result, request, requested_time):
+    print("Interpolating data...")
     if isinstance(request, dr.DataRequest):
         interval = request.get_time_interval()
     with open("config.yaml", "r") as f:
@@ -232,21 +231,15 @@ def interpolate(result, request, requested_time):
                 del weather[key + "_y"]
             elif el == "v":
                 key = "wind_direction"
-                key_weather=  np.arctan2(weather["u"], weather["v"]) * (180 / np.pi) + 180
+                key_weather = np.arctan2(weather["u"], weather["v"]) * (180 / np.pi) + 180
                 key_weather = np.mod(key_weather, 360)
                 weather[key] = [[[float(value) for value in row] for row in slice_] for slice_ in key_weather]
                 del weather["u"]
                 del weather["v"]
-            elif el[-4:]  == "mask":
+            elif el[-4:] == "mask":
                 del weather[el]
-
-
+        print("Interpolation complete")
         weather["time_inter"] = time_inter.tolist()
-        # weather["time"] = time.tolist()
-
-        # weather["normal"] = normal
-        # weather["lat"] = lat.tolist()
-        # weather["lon"] = lon.tolist()
         weather["lat_inter"] = lat_inter.tolist()
         weather["lon_inter"] = lon_inter.tolist()
 

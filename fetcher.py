@@ -1,13 +1,11 @@
 import asyncio
 from urllib.request import urlretrieve
 
-import numpy as np
 import xarray as xr
 import copernicusmarine
 import pytz
 import yaml
 from datetime import datetime, timedelta
-import time
 import os
 import atexit
 
@@ -178,8 +176,6 @@ class Fetcher:
                                                                                    "gfswave.t" + forecast_hour +
                         "z.global.0p25.f" + h + ".grib2" + self.__request.parse_for_noaa()
                 )
-                print(forecast_hour)
-                print(h)
             else:
                 h = '{:03d}'.format(j)
                 forecast_hour = self.map_hour(now.hour)
@@ -190,8 +186,6 @@ class Fetcher:
                                                                          "gfswave.t" + forecast_hour +
                         "z.global.0p25.f" + h + ".grib2" + self.__request.parse_for_noaa()
                 )
-                print(forecast_hour)
-                print(h)
 
             filename = "ww" + forecast_time.strftime("%Y%m%d") + forecast_hour + str(j) + ".grib2"
             atexit.register(rm_grib_files, filename)
@@ -207,9 +201,6 @@ class Fetcher:
                 j = j + 1
 
                 for v in wave_unproccessed:
-
-                    print("{}, {}, {}".format(
-                        v, wave_unproccessed[v].attrs["long_name"], wave_unproccessed[v].attrs["units"]))
                     if v in res:
                         res[v].append(wave_unproccessed[v].values.tolist())
                     else:
@@ -236,6 +227,7 @@ class Fetcher:
         """
         waves_and_wind, tides, currents = None, None, None
         res = {}
+        print("Fetching data...")
         if len(self.__request.noaa_variables) > 0:
             waves_and_wind = self.fetch_wave_and_wind()
         res["waves_and_wind"] = waves_and_wind
@@ -246,5 +238,5 @@ class Fetcher:
         if self.__request.currents_variables != [[],[]]:
             currents = self.fetch_currents().to_dict()
             res["copernicus"]["currents"] = currents
-
+        print("Fetching finished")
         return res

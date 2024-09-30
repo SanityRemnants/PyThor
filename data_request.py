@@ -1,5 +1,4 @@
 from datetime import datetime
-from copy import copy
 
 
 class DataRequest:
