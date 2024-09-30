@@ -155,7 +155,7 @@ class Fetcher:
 
         :return: Processed wave and wind data.
         """
-        now = datetime.now().astimezone(pytz.timezone('America/New_York'))
+        now = datetime.now().astimezone(pytz.timezone('UTC'))
         res = {}
         time_start, time_end = self.__request.get_time()
         time_start, time_end = time_start.astimezone(pytz.timezone('UTC')), time_end.astimezone(
