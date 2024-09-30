@@ -22,8 +22,10 @@ def rm_grib_files(file_name: str):
     :return:
     """
     try:
-        os.remove(file_name)
-        os.remove(file_name + ".923a8.idx")
+        files = os.listdir(".")
+        for f in files:
+            if file_name in f:
+                os.remove(f)
     except FileNotFoundError:
         return
 
