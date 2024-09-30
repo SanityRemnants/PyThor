@@ -95,7 +95,8 @@ class Fetcher:
         loop.close()
 
     async def fetch_currents_async(self, data_request):
-        time_start, time_end = data_request["time"][0].astimezone(pytz.timezone('UTC')).replace(tzinfo=None), data_request["time"][1].astimezone(
+        time_start, time_end = data_request["time"][0].astimezone(pytz.timezone('UTC')).replace(tzinfo=None), \
+        data_request["time"][1].astimezone(
             pytz.timezone('UTC')).replace(tzinfo=None)
         time_start = time_start.replace(hour=self.curr_map_hour(data_request["time"][0].hour))
         time_end = self.curr_map_later_date(time_end)
@@ -127,7 +128,8 @@ class Fetcher:
     async def fetch_tide_async(self, data_request):
         time_start = data_request["time"][0]
         time_end = data_request["time"][1]
-        time_start, time_end = time_start.astimezone(pytz.timezone('UTC')).replace(tzinfo=None), time_end.astimezone(pytz.timezone('UTC')).replace(tzinfo=None)
+        time_start, time_end = time_start.astimezone(pytz.timezone('UTC')).replace(tzinfo=None), time_end.astimezone(
+            pytz.timezone('UTC')).replace(tzinfo=None)
         self.tide = copernicusmarine.open_dataset(
             dataset_id=data_request["dataset_id"],
             minimum_longitude=data_request["longitude"][0],
@@ -164,7 +166,6 @@ class Fetcher:
         time_data = []
         forecast_hour = None
         while forecast_time <= time_end:
-
             if forecast_time <= now:
 
                 forecast_hour = self.map_hour(forecast_time.hour)
@@ -235,7 +236,7 @@ class Fetcher:
         if len(self.__request.tide_variables) > 0:
             tides = self.fetch_tide().to_dict()
             res["copernicus"]["tides"] = tides
-        if self.__request.currents_variables != [[],[]]:
+        if self.__request.currents_variables != [[], []]:
             currents = self.fetch_currents().to_dict()
             res["copernicus"]["currents"] = currents
         print("Fetching finished")
