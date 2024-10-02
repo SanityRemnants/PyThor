@@ -191,4 +191,4 @@ data_folder
 *.grib2
 *.idx
 config.yaml
-/data
+/cache
