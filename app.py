@@ -52,7 +52,7 @@ def root():
         return res
     else:
         with open(f'cache/{file_name}.json', 'r') as f:
-            return f
+            json.load(f)
 
 
 if __name__ == '__main__':
