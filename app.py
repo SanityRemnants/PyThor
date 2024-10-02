@@ -42,7 +42,7 @@ def root():
         return res
     else:
         with open(f'data/{file_name}.json', 'r') as f:
-            return f
+            return json.load(f)
 
 
 
