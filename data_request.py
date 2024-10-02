@@ -1,4 +1,5 @@
 from datetime import datetime
+import re
 
 
 class DataRequest:
@@ -211,4 +212,4 @@ class DataRequest:
         for s in self.tide_variables:
             result += str(s)
         print(result)
-        return result.strip().replace(" ","").replace(":","")
+        return re.sub(r'[^a-zA-Z0-9\s]', '', result.strip())
