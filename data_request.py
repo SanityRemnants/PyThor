@@ -41,7 +41,7 @@ class DataRequest:
 
         curr_vars = [[],[]]
         tide_vars = []
-        for v in request_vars:
+        for v in request_vars.sort():
             if v in wave_and_wind_dict.keys():
                 for name in wave_and_wind_dict[v]:
                     noaa_vars.append(name)
