@@ -203,8 +203,9 @@ class DataRequest:
         result += str(self.get_time_interval())
         for s in self.get_coordinates().values():
             result += str(s[0]) + str(s[1])
-        for s in self.currents_variables:
-            result += str(s)
+        for t in self.currents_variables:
+            for s in t:
+                result += str(s)
         for s in self.noaa_variables:
             result += str(s)
         for s in self.tide_variables:
