@@ -208,7 +208,7 @@ class Fetcher:
                         res[v] = []
                         res[v].append(wave_unproccessed[v].values.tolist())
             except Exception as e:
-                return str(e)
+                print(str(e))
 
             i = i + 1
             forecast_time = forecast_time + timedelta(hours=1)

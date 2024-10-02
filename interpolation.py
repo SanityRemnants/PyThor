@@ -7,6 +7,13 @@ import data_request as dr
 
 
 def spherical_to_cartesian(lat, lon, r=1):
+    """
+    return cartesian coordinates of given spherical coordinates
+    :param r:
+    :param lon: longitude of given point
+    :param lat: latitude of given point
+    :return: a tuple of three coordinates in cartesian system
+    """
     lat_rad = np.deg2rad(lat)
     lon_rad = np.deg2rad(lon)
     x = r * np.cos(lat_rad) * np.cos(lon_rad)
@@ -14,8 +21,12 @@ def spherical_to_cartesian(lat, lon, r=1):
     z = r * np.sin(lat_rad)
     return x, y, z
 
-
 def get_data(wave_wind_not_inter):
+    """
+    extract longitude, latitude and time data from fetched wave and wind  data
+    :param wave_wind_not_inter: wave_wind from watcher data
+    :return: a tuple of three dimensions
+    """
     lat = np.array(wave_wind_not_inter["latitude"])
     lon = np.array(wave_wind_not_inter["longitude"])
     time = np.array(wave_wind_not_inter["time"])
@@ -91,8 +102,12 @@ def time_interpolation(time, lat_inter, lon_inter, res, key, time_inter, weather
     for k in range(len(time_inter)):
         for i in range(len(lat_inter)):
             for j in range(len(lon_inter)):
-                result[k][i][j] = interpolator([time_inter[k], lat_inter[i], lon_inter[j]])
-    weather[key] = [[[float(value[0]) for value in row] for row in slice_] for slice_ in result]
+                try:
+                    result[k][i][j] = interpolator([time_inter[k], lat_inter[i], lon_inter[j]])
+                except:
+                    result[k][i][j] = None
+
+    weather[key] = [[[float(value[0]) if value is not None else None for value in row] for row in slice_] for slice_ in result]
 
 
 def apply_nan_masc(keys_to_iter, weather, land_treshhold):
@@ -104,7 +119,10 @@ def apply_nan_masc(keys_to_iter, weather, land_treshhold):
                     wl = weather[k][t][l]
                     for lt in range(len(weather[key_to_nan][t][l])):
                         wlt = wl[lt]
-                        if wlt >= land_treshhold:
+                        if wlt is not None:
+                            if wlt >= land_treshhold:
+                                weather[key_to_nan][t][l][lt] = np.NaN
+                        else:
                             weather[key_to_nan][t][l][lt] = np.NaN
             # weather.pop(k)
 
