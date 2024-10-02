@@ -211,4 +211,4 @@ class DataRequest:
         for s in self.tide_variables:
             result += str(s)
         print(result)
-        return result.strip().replace(" ","")
+        return result.strip().replace(" ","").replace(":","")
