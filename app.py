@@ -18,10 +18,10 @@ with open("config.yaml", "r") as f:
 
 
 def clear_c():
-    files = os.listdir("cache")
+    files = os.listdir("./cache/")
     for f in files:
-        os.remove(f)
-    os.remove("cache")
+        os.remove("./cache/" + f)
+    os.rmdir("cache/")
 
 
 if clear_cache:
