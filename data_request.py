@@ -148,30 +148,30 @@ class DataRequest:
         }
         return result
 
-    def parse_for_copernicus_wind(self):
+    def parse_for_copernicus_wind(self, time_end):
         """
-        parse API request into copernicus request dictionary for tide variables
+        parse API request into copernicus request dictionary for wind variables up to a specified point in time
         :return: a dict compatible with copernicus marine API
         """
         result = {
             "dataset_id": "cmems_obs-wind_glo_phy_nrt_l4_0.125deg_PT1H",
             "longitude": [self.__longitude.start, self.__longitude.end],
             "latitude": [self.__latitude.start, self.__latitude.end],
-            "time": [self.__time.start, self.__time.end],
+            "time": [self.__time.start, time_end],
             "variables": self.wind_variables
         }
         return result
 
-    def parse_for_copernicus_wave(self):
+    def parse_for_copernicus_wave(self, time_end):
         """
-        parse API request into copernicus request dictionary for tide variables
+        parse API request into copernicus request dictionary for wave variables up to a specified point in time
         :return: a dict compatible with copernicus marine API
         """
         result = {
             "dataset_id": "cmems_mod_glo_wav_anfc_0.083deg_PT3H-i",
             "longitude": [self.__longitude.start, self.__longitude.end],
             "latitude": [self.__latitude.start, self.__latitude.end],
-            "time": [self.__time.start, self.__time.end],
+            "time": [self.__time.start, time_end],
             "variables": self.wave_variables
         }
         return result
@@ -200,7 +200,7 @@ class DataRequest:
     def __str__(self):
         result = ""
         for s in self.get_time():
-            result += str(s).strip().replace(" ","")
+            result += str(s).strip().replace(" ", "")
         result += str(self.get_time_interval())
         for s in self.get_coordinates().values():
             result += str(s[0]) + str(s[1])
