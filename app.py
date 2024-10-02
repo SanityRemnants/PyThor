@@ -16,6 +16,9 @@ with open("config.yaml", "r") as f:
 
 app = Flask(__name__)
 
+if not os.path.exists('data'):
+    os.mkdir("data")
+
 
 @app.route('/api/weather')
 def root():
@@ -32,6 +35,7 @@ def root():
         result = Fetcher(data_request).fetch()
 
         res = interpolate(result, data_request, time)
+
 
         with open(f'data/{file_name}.json', 'w') as f:
             json.dump(res, f)
