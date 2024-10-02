@@ -1,6 +1,8 @@
 from datetime import datetime
 import re
 
+import yaml
+
 
 class DataRequest:
     """
@@ -200,7 +202,7 @@ class DataRequest:
     def __str__(self):
         result = ""
         for s in self.get_time():
-            result += str(s).strip().replace(" ", "")
+            result += str(s).strxip().replace(" ", "")
         result += str(self.get_time_interval())
         for s in self.get_coordinates().values():
             result += str(s[0]) + str(s[1])
@@ -211,4 +213,8 @@ class DataRequest:
             result += str(s)
         for s in self.tide_variables:
             result += str(s)
+        with open("config.yaml", "r") as f:
+            config = yaml.safe_load(f)
+            result += str(config["resolution"])
+            result += str(config["land_treshhold"])
         return re.sub(r'[^a-zA-Z0-9\s]', '', result.strip())

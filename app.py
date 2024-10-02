@@ -41,7 +41,9 @@ def root():
                                request.args.get('interval', 60),
                                request.args.get('variables', "").replace(" ", "").split(","))
     file_name = str(data_request)
+    print("Checking cache folder...")
     if not os.path.isfile(f'cache/{file_name}.json'):
+        print("Cache miss")
         time = [int(request.args.get('time_start')), int(request.args.get('time_end'))]
         if not data_request.is_valid():
             return Response(status=400)
@@ -53,6 +55,7 @@ def root():
             json.dump(res, f)
         return res
     else:
+        print("Cache hit")
         with open(f'cache/{file_name}.json', 'r') as f:
             return json.load(f)
 
