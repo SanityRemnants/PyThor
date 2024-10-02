@@ -199,11 +199,15 @@ class DataRequest:
     def __str__(self):
         result = ""
         for s in self.get_time():
-            result += str(s).strip()
+            result += str(s).strip().replace(" ","")
         result += str(self.get_time_interval())
         for s in self.get_coordinates().values():
             result += str(s[0]) + str(s[1])
-        for s in self.tide_variables + self.currents_variables + self.noaa_variables:
+        for s in self.currents_variables:
+            result += str(s)
+        for s in self.noaa_variables:
+            result += str(s)
+        for s in self.tide_variables:
             result += str(s)
         print(result)
-        return result
+        return result.strip().replace(" ","")
