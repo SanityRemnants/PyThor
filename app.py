@@ -28,8 +28,8 @@ if clear_cache:
 
 app = Flask(__name__)
 
-if not os.path.exists('data'):
-    os.mkdir("data")
+if not os.path.exists('cache'):
+    os.mkdir("cache")
 
 @app.route('/api/weather')
 def root():
@@ -52,7 +52,7 @@ def root():
         return res
     else:
         with open(f'cache/{file_name}.json', 'r') as f:
-            json.load(f)
+            return json.load(f)
 
 
 if __name__ == '__main__':
