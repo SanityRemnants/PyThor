@@ -16,6 +16,7 @@ with open("config.yaml", "r") as f:
     PASSWORD = config["coppernicus_acount"]["password"]
     clear_cache = config["clear_cache"]
 
+
 def clear_c():
     files = os.listdir("cache")
     for f in files:
@@ -30,6 +31,7 @@ app = Flask(__name__)
 
 if not os.path.exists('cache'):
     os.mkdir("cache")
+
 
 @app.route('/api/weather')
 def root():
