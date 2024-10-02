@@ -1,3 +1,4 @@
+import atexit
 import os
 
 from flask import Flask, request, Response
@@ -13,12 +14,22 @@ with open("config.yaml", "r") as f:
     config = yaml.safe_load(f)
     USERNAME = config["coppernicus_acount"]["username"]
     PASSWORD = config["coppernicus_acount"]["password"]
+    clear_cache = config["clear_cache"]
+
+def clear_c():
+    files = os.listdir("cache")
+    for f in files:
+        os.remove(f)
+    os.remove("cache")
+
+
+if clear_cache:
+    atexit.register(clear_c)
 
 app = Flask(__name__)
 
 if not os.path.exists('data'):
     os.mkdir("data")
-
 
 @app.route('/api/weather')
 def root():
@@ -28,7 +39,7 @@ def root():
                                request.args.get('interval', 60),
                                request.args.get('variables', "").replace(" ", "").split(","))
     file_name = str(data_request)
-    if not os.path.isfile(f'data/{file_name}.json'):
+    if not os.path.isfile(f'cache/{file_name}.json'):
         time = [int(request.args.get('time_start')), int(request.args.get('time_end'))]
         if not data_request.is_valid():
             return Response(status=400)
@@ -36,14 +47,12 @@ def root():
 
         res = interpolate(result, data_request, time)
 
-
-        with open(f'data/{file_name}.json', 'w') as f:
+        with open(f'cache/{file_name}.json', 'w') as f:
             json.dump(res, f)
         return res
     else:
-        with open(f'data/{file_name}.json', 'r') as f:
+        with open(f'cache/{file_name}.json', 'r') as f:
             return f
-
 
 
 if __name__ == '__main__':

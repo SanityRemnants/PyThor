@@ -211,5 +211,4 @@ class DataRequest:
             result += str(s)
         for s in self.tide_variables:
             result += str(s)
-        print(result)
         return re.sub(r'[^a-zA-Z0-9\s]', '', result.strip())
