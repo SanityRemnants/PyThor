@@ -30,7 +30,15 @@ class DataRequest:
                                 "northward_sea_water_velocity"]  # cmems_mod_glo_phy-cur_anfc_0.083deg_PT6H-i
 
         tide_variables_dict = {"tide_height": "zos"}  # cmems_mod_glo_phy_anfc_0.083deg_PT1H-m
+        wave_variables_dict = {"wave_direction":"VMDR","wave_height":"VHM0","wave_period":"VTM01_SW1"}
+        wind_variables = ["wind_speed", "wind_direction"]
+        wind_variables_names = ["eastward_wind",
+                                "northward_wind"]  # cmems_mod_glo_phy-cur_anfc_0.083deg_PT6H-i
         noaa_vars = []
+
+        wave_vars = []
+        wind_vars = [[],[]]
+
         curr_vars = [[],[]]
         tide_vars = []
         for v in request_vars:
@@ -42,7 +50,12 @@ class DataRequest:
                 curr_vars[0] = curr_variables_names.copy()
             if v in tide_variables_dict:
                 tide_vars.append(tide_variables_dict[v])
-        return noaa_vars, curr_vars, tide_vars
+            if v in wind_variables:
+                wind_vars[1].append(v)
+                wind_vars[0] = wind_variables_names.copy()
+            if v in wave_variables_dict:
+                wave_vars.append(wave_variables_dict[v])
+        return noaa_vars, curr_vars, tide_vars, wave_vars, wind_vars
 
     def __init__(self, latitude_start, latitude_end, longitude_start, longitude_end, time_start, time_end, interval,
                  variables):
@@ -54,7 +67,7 @@ class DataRequest:
         except:
             self.__time = None
         self.__time_interval = float(interval)
-        self.noaa_variables, self.currents_variables, self.tide_variables = self.__parse_variables(variables)
+        self.noaa_variables, self.currents_variables, self.tide_variables, self.wave_variables, self.wind_variables = self.__parse_variables(variables)
 
     def parse_for_noaa(self) -> str:
         """
@@ -132,6 +145,34 @@ class DataRequest:
         }
         return result
 
+    def parse_for_copernicus_wind(self,time_start,time_end):
+        """
+        parse API request into copernicus request dictionary for tide variables
+        :return: a dict compatible with copernicus marine API
+        """
+        result = {
+            "dataset_id": "cmems_obs-wind_glo_phy_nrt_l4_0.125deg_PT1H",
+            "longitude": [self.__longitude.start, self.__longitude.end],
+            "latitude": [self.__latitude.start, self.__latitude.end],
+            "time": [self.__time.start, self.__time.end],
+            "variables": self.wind_variables
+        }
+        return result
+
+    def parse_for_copernicus_wave(self):
+        """
+        parse API request into copernicus request dictionary for tide variables
+        :return: a dict compatible with copernicus marine API
+        """
+        result = {
+            "dataset_id": "cmems_mod_glo_wav_anfc_0.083deg_PT3H-i",
+            "longitude": [self.__longitude.start, self.__longitude.end],
+            "latitude": [self.__latitude.start, self.__latitude.end],
+            "time": [self.__time.start, self.__time.end],
+            "variables": self.wave_variables
+        }
+        return result
+
     def is_valid(self) -> bool:
         """
         checks whether the recieved API request is valid
@@ -152,3 +193,15 @@ class DataRequest:
         if len(self.tide_variables) == 0 and len(self.currents_variables) == 0 and len(self.noaa_variables) == 0:
             return False
         return True
+
+    def __str__(self):
+        result = ""
+        for s in self.get_time():
+            result += str(s)
+        result += str(self.get_time_interval())
+        for s in self.get_coordinates().values():
+            result+=str(s[0])+str(s[1])
+        for s in self.tide_variables + self.currents_variables + self.noaa_variables:
+            result += str(s)
+        print(result)
+        return result
