@@ -15,7 +15,7 @@ The application runs at 127.0.0.1:5000 by default.
 
 To obtain weather data, please submit a query in the following format:
 
-/api/weather?latitude_start=**latitude_start**&latitude_end=**latitude_end**&longitude_start=**longitude_start**&longitude_end=**longitude_end**&variables=**variables**&time_start=**time_start**&time_end=**time_end**
+{address(127.0.0.1:5000)}/api/weather?latitude_start=**latitude_start**&latitude_end=**latitude_end**&longitude_start=**longitude_start**&longitude_end=**longitude_end**&variables=**variables**&time_start=**time_start**&time_end=**time_end**
 
 - **latitude_start** - latitude origin in dotted floating point format
 - **latitude_end** - end of latitude in dotted floating point format
