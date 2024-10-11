@@ -202,7 +202,7 @@ class DataRequest:
     def __str__(self):
         result = ""
         for s in self.get_time():
-            result += str(s).strxip().replace(" ", "")
+            result += str(s).strip().replace(" ", "")
         result += str(self.get_time_interval())
         for s in self.get_coordinates().values():
             result += str(s[0]) + str(s[1])
