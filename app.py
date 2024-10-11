@@ -33,6 +33,11 @@ if not os.path.exists('cache'):
     os.mkdir("cache")
 
 
+@app.route('/')
+def index():
+    return "PyThor is working"
+
+
 @app.route('/api/weather')
 def root():
     data_request = DataRequest(request.args.get('latitude_start'), request.args.get('latitude_end'),
