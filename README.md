@@ -57,5 +57,5 @@ from PyThor import runPythor
 
 runPythor(host=<address> , port=<port>)
 ```
-This can also be found in Scripts/example.py  
+This can also be found in Scripts/example.py along with modification of config for pythor
 #### Currently only conda installation is supported due to some libraries not being compatible with pip
