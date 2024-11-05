@@ -4,13 +4,14 @@ import os
 from flask import Flask, request, Response
 
 from PyThor.config.config import Config
+
+config = Config()
+clear_cache = config.settings["clear_cache"]
+
 from PyThor.data.data_request import DataRequest
 from PyThor.data.fetcher import Fetcher
 from PyThor.data.interpolation import interpolate
 import json
-
-config = Config()
-clear_cache = config.settings["clear_cache"]
 
 
 def clear_c():
