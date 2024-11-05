@@ -3,9 +3,9 @@ import yaml
 from cerberus import Validator
 
 root = Path(__file__).parents[2]
-config_path = root / "PyThor" / "config"
-config_file = config_path / "config.yaml"
-config_schema = config_path / "config_schema.yaml"
+package = root / "PyThor" 
+config_file = package / "config.yaml"
+config_schema = package / "config_schema.yaml"
 
 
 class Config:
