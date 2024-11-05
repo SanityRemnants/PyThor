@@ -41,7 +41,7 @@ To obtain weather data, please submit a query in the following format:
 
 ## Instalation
 ### Anaconda
-Run: 
+While in the root directory of repo run: 
 ```bash
 conda create --name <envname> --file requirements.txt
 ``` 
