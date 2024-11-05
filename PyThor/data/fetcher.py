@@ -4,12 +4,12 @@ from urllib.request import urlretrieve
 import xarray as xr
 import copernicusmarine
 import pytz
-import yaml
 from datetime import datetime, timedelta
 import os
 import atexit
 
-import data_request as dr
+import PyThor.data.data_request as dr
+from PyThor.app_pythor import config
 
 
 def rm_grib_files(file_name: str):
@@ -20,7 +20,7 @@ def rm_grib_files(file_name: str):
     :return:
     """
     try:
-        files = os.listdir(".")
+        files = os.listdir("../..")
         for f in files:
             if file_name in f:
                 os.remove(f)
@@ -40,10 +40,8 @@ class Fetcher:
             self.__request = request
         else:
             raise print("argument is not valid data request")
-        with open("config.yaml", "r") as f:
-            config = yaml.safe_load(f)
-            self.USERNAME = config["coppernicus_acount"]["username"]
-            self.PASSWORD = config["coppernicus_acount"]["password"]
+        self.USERNAME = config.settings["coppernicus_acount"]["username"]
+        self.PASSWORD = config.settings["coppernicus_acount"]["password"]
 
     @staticmethod
     def map_hour(hour):
@@ -96,8 +94,8 @@ class Fetcher:
 
     async def fetch_currents_async(self, data_request):
         time_start, time_end = data_request["time"][0].astimezone(pytz.timezone('UTC')).replace(tzinfo=None), \
-        data_request["time"][1].astimezone(
-            pytz.timezone('UTC')).replace(tzinfo=None)
+                               data_request["time"][1].astimezone(
+                                   pytz.timezone('UTC')).replace(tzinfo=None)
         time_start = time_start.replace(hour=self.curr_map_hour(data_request["time"][0].hour))
         time_end = self.curr_map_later_date(time_end)
         self.currents = copernicusmarine.open_dataset(
