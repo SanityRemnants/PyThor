@@ -1,1 +1,1 @@
-from config import Config
+from Pythor.config.config import Config

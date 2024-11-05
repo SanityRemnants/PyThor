@@ -1,3 +1,3 @@
-from data_request import DataRequest
-from fetcher import Fetcher
-from interpolation import *
+from Pythor.data.data_request import DataRequest
+from Pythor.data.fetcher import Fetcher
+from Pythor.data.interpolation import *
