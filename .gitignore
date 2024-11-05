@@ -190,5 +190,5 @@ data_folder
 *.yaml
 *.grib2
 *.idx
-config.yaml
+PyThor/config.yaml
 /cache

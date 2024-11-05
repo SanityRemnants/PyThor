@@ -1,7 +1,7 @@
 from datetime import datetime
 import re
 
-import yaml
+from PyThor.app_pythor import config
 
 
 class DataRequest:
@@ -213,8 +213,6 @@ class DataRequest:
             result += str(s)
         for s in self.tide_variables:
             result += str(s)
-        with open("config.yaml", "r") as f:
-            config = yaml.safe_load(f)
-            result += str(config["resolution"])
-            result += str(config["land_treshhold"])
+        result += str(config.settings["resolution"])
+        result += str(config.settings["land_treshhold"])
         return re.sub(r'[^a-zA-Z0-9\s]', '', result.strip())

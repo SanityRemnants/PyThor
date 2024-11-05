@@ -3,18 +3,15 @@ import os
 
 from flask import Flask, request, Response
 
-from data_request import DataRequest
-from fetcher import Fetcher
-from interpolation import interpolate
+from PyThor.config.config import Config
+
+config = Config()
+clear_cache = config.settings["clear_cache"]
+
+from PyThor.data.data_request import DataRequest
+from PyThor.data.fetcher import Fetcher
+from PyThor.data.interpolation import interpolate
 import json
-
-import yaml
-
-with open("config.yaml", "r") as f:
-    config = yaml.safe_load(f)
-    USERNAME = config["coppernicus_acount"]["username"]
-    PASSWORD = config["coppernicus_acount"]["password"]
-    clear_cache = config["clear_cache"]
 
 
 def clear_c():
@@ -65,6 +62,10 @@ def root():
             return json.load(f)
 
 
+def runPythor(host="127.0.0.1", port=5000):
+    app.run(host=host, port=port)
+
+
 if __name__ == '__main__':
-    app.run(host="127.0.0.1", port=5000)
+    runPythor()
 # print(fetch_wave(0, 0))

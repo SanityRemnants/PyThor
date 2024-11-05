@@ -1,9 +1,9 @@
 from copy import deepcopy
 
 import numpy as np
-import yaml
 from scipy.interpolate import Rbf, RegularGridInterpolator
-import data_request as dr
+import PyThor.data.data_request as dr
+from PyThor.app_pythor import config
 
 
 def spherical_to_cartesian(lat, lon, r=1):
@@ -21,6 +21,7 @@ def spherical_to_cartesian(lat, lon, r=1):
     z = r * np.sin(lat_rad)
     return x, y, z
 
+
 def get_data(wave_wind_not_inter):
     """
     extract longitude, latitude and time data from fetched wave and wind  data
@@ -32,12 +33,14 @@ def get_data(wave_wind_not_inter):
     time = np.array(wave_wind_not_inter["time"])
     return lat, lon, time
 
+
 def get_copernicus_data(data):
     lat = np.array(data["coords"]["latitude"]["data"])
     lon = np.array(data["coords"]["longitude"]["data"])
     time = np.array(data["coords"]["time"]["data"])
     time = time.astype('datetime64[s]').astype('int64')
     return lat, lon, time
+
 
 def check_keys(keys_to_check, wave_wind_not_inter, keys, weather, result, lon_inter, lat_inter, time_inter):
     wave_and_wind_dict = {
@@ -76,8 +79,9 @@ def check_keys(keys_to_check, wave_wind_not_inter, keys, weather, result, lon_in
                 keys.append(wave_and_wind_dict[key] + "_mask")
                 result[key_inter] = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in
                                      range(len(time_inter))]
-                result[wave_and_wind_dict[key] + "_mask" + "_inter"] = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in
-                                                    range(len(time_inter))]
+                result[wave_and_wind_dict[key] + "_mask" + "_inter"] = [
+                    [[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in
+                    range(len(time_inter))]
 
 
 def latlon_interpolation(time, weather, key, lat_grid, lon_grid, lat_inter_grid, lon_inter_grid, res):
@@ -107,7 +111,8 @@ def time_interpolation(time, lat_inter, lon_inter, res, key, time_inter, weather
                 except:
                     result[k][i][j] = None
 
-    weather[key] = [[[float(value[0]) if value is not None else None for value in row] for row in slice_] for slice_ in result]
+    weather[key] = [[[float(value[0]) if value is not None else None for value in row] for row in slice_] for slice_ in
+                    result]
 
 
 def apply_nan_masc(keys_to_iter, weather, land_treshhold):
@@ -130,16 +135,14 @@ def apply_nan_masc(keys_to_iter, weather, land_treshhold):
 def interpolate_for_copernicus(weather, result, request, requested_time):
     if isinstance(request, dr.DataRequest):
         interval = request.get_time_interval()
-    with open("config.yaml", "r") as f:
-        config = yaml.safe_load(f)
-        resolution = config["resolution"]
-        land_treshhold = config["land_treshhold"]
+
+    resolution = config.settings["resolution"]
+    land_treshhold = config.settings["land_treshhold"]
     cop_weather = {}
     try:
         data = result["copernicus"]
     except:
         return weather
-    land_treshhold = 0.5
     for el in data:
         element = data[el]
         lat, lon, time = get_copernicus_data(element)
@@ -170,10 +173,10 @@ def interpolate_for_copernicus(weather, result, request, requested_time):
             cop_weather[key] = np.array(reduced_array)
             cop_weather[key + "_mask"] = np.isnan(cop_weather[key]).astype(float)
             latlon_interpolation(time, cop_weather, key, lat_grid, lon_grid, lat_inter_grid, lon_inter_grid, res)
-            latlon_interpolation(time, cop_weather, key + "_mask", lat_grid, lon_grid, lat_inter_grid, lon_inter_grid, res)
+            latlon_interpolation(time, cop_weather, key + "_mask", lat_grid, lon_grid, lat_inter_grid, lon_inter_grid,
+                                 res)
             time_interpolation(time, lat_inter, lon_inter, res, key, time_inter, cop_weather)
             time_interpolation(time, lat_inter, lon_inter, res, key + "_mask", time_inter, cop_weather)
-
 
     keys_to_iter = deepcopy(list(cop_weather.keys()))
     apply_nan_masc(keys_to_iter, cop_weather, land_treshhold)
@@ -207,10 +210,8 @@ def interpolate(result, request, requested_time):
     print("Interpolating data...")
     if isinstance(request, dr.DataRequest):
         interval = request.get_time_interval()
-    with open("config.yaml", "r") as f:
-        config = yaml.safe_load(f)
-        resolution = config["resolution"]
-        land_treshhold = config["land_treshhold"]
+    resolution = config.settings["resolution"]
+    land_treshhold = config.settings["land_treshhold"]
     weather = {}
     wave_wind_not_inter = result["waves_and_wind"]
     if wave_wind_not_inter is not None:

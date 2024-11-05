@@ -41,8 +41,21 @@ To obtain weather data, please submit a query in the following format:
 
 ## Instalation
 ### Anaconda
-Run: \
-    ```conda create --name <envname> --file requirements.txt``` \
-In order to install all the required libraries for the app to function.
+While in the root directory of repo run: 
+```bash
+conda create --name <envname> --file requirements.txt
+``` 
+In order to install all the required libraries for the app to function. 
+Then run to install PyTorch:
+``` bash
+conda activate <envname> 
+python setup.py install
+```
+Then you should be able to run pythor from your code using:
+```python
+from PyThor import runPythor
 
-Currently only conda installation is supported due to some libraries not being compatible with pip
+runPythor(host=<address> , port=<port>)
+```
+This can also be found in Scripts/example.py along with modification of config for pythor
+#### Currently only conda installation is supported due to some libraries not being compatible with pip

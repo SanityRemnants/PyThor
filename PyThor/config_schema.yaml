@@ -1,0 +1,19 @@
+coppernicus_acount:
+  required: False
+  type: dict
+  schema:
+    username:
+      required: False
+      type: string
+    password:
+      required: False
+      type: string
+resolution:
+  required: True
+  type: float
+land_treshhold:
+  required: True
+  type: float
+clear_cache:
+  required: True
+  type: boolean
