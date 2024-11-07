@@ -58,7 +58,7 @@ from PyThor import runPythor
 runPythor(host=<address> , port=<port>)
 ```
 or from command line using:
-```
+```bash
 python -m PyThor -a <address> -p <port>
 ```
 This can also be found in Scripts/example.py along with modification of config for pythor
