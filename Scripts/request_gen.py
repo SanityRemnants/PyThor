@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, END
 from tkcalendar import DateEntry
 from datetime import datetime
 
@@ -73,8 +73,10 @@ def create_window():
         epoch_start = convertToTimeEpoch(hour_start, minute_start, date_start)
         epoch_end = convertToTimeEpoch(hour_end, minute_end, date_end)
         result_t['state'] = 'normal'
-        result_t.insert('1.0', compile_request(selected_params, epoch_start, epoch_end, interval, lat_start, lat_end,
-                                               lon_start, lon_end, addr_val.get()))
+        result_t.delete(1.0, END)
+        result_t.insert(1.0, compile_request(selected_params, epoch_start, epoch_end, interval, lat_start, lat_end,
+                                             lon_start, lon_end, addr_val.get()))
+        result_t.update()
         result_t['state'] = 'disabled'
 
     # root window
@@ -191,7 +193,7 @@ def create_window():
 
     button.pack()
 
-    result_t = tk.Text(root, height=4, width=15,state=tk.DISABLED)
+    result_t = tk.Text(root, height=4, width=15, state=tk.DISABLED)
     result_t.pack(fill="x", pady=5, padx=10)
     root.mainloop()
 
