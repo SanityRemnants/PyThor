@@ -1,31 +1,21 @@
 import asyncio
 from urllib.request import urlretrieve
 
+import atexit
 import xarray as xr
 import copernicusmarine
 import pytz
 from datetime import datetime, timedelta
-import os
-import atexit
 
 import PyThor.data.data_request as dr
 from PyThor.app_pythor import config
+from PyThor.config.config import save_folder
+from PyThor.utilities.files import rm_grib_files, rm_cache_files
 
-
-def rm_grib_files(file_name: str):
-    """
-    hook function that gets registered after each downloaded grib file to ensure that after the program ends
-     there are no residual files left (grib files and corresponding .idx files)
-    :param file_name: a name of a grib file to be removed after program exit
-    :return:
-    """
-    try:
-        files = os.listdir("../..")
-        for f in files:
-            if file_name in f:
-                os.remove(f)
-    except FileNotFoundError:
-        return
+# Register cleanup functions
+atexit.register(rm_grib_files)
+if config.settings["clear_cache"]:
+    atexit.register(rm_cache_files)
 
 
 class Fetcher:
@@ -185,12 +175,12 @@ class Fetcher:
                                                                          "gfswave.t" + forecast_hour +
                         "z.global.0p25.f" + h + ".grib2" + self.__request.parse_for_noaa()
                 )
-
             filename = "ww" + forecast_time.strftime("%Y%m%d") + forecast_hour + str(j) + ".grib2"
-            atexit.register(rm_grib_files, filename)
+
             try:
-                urlretrieve(url, filename)
-                wave_unproccessed = xr.load_dataset(filename, engine='cfgrib')
+                print(save_folder + filename)
+                urlretrieve(url, save_folder + filename)
+                wave_unproccessed = xr.load_dataset(save_folder + filename, engine='cfgrib')
                 res["longitude"] = wave_unproccessed["longitude"].values.tolist()
                 res["latitude"] = wave_unproccessed["latitude"].values.tolist()
                 t = wave_unproccessed["time"].values

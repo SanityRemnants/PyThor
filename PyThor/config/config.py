@@ -3,12 +3,18 @@ import yaml
 from cerberus import Validator
 
 root = Path(__file__).parents[2]
-package = root / "PyThor" 
+package = root / "PyThor"
 config_file = package / "config.yaml"
 config_schema = package / "config_schema.yaml"
+save_folder = package / "Downloaded_data"
+cache_folder = package / "Cache"
 
 
 class Config:
+    """
+    A class that consolidates configuration settings
+    """
+
     def __init__(self):
         self._schema = read_yaml_into_dict(config_schema)
         self.validator = Validator(self._schema)
@@ -26,6 +32,9 @@ class Config:
         self._settings = new_settings
 
     def validate(self, config_dict: dict) -> None:
+        """
+        Validate settings against the schema
+        """
         if not config_dict:
             raise ValueError("Empty settings!")
         if not self._schema:
