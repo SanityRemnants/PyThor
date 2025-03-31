@@ -169,14 +169,18 @@ def interpolate_for_copernicus(weather, result, request, requested_time):
             key_inter = key + "_inter"
             result[key_inter] = [[[0] * len(lon_inter) for _ in range(len(lat_inter))] for _ in
                                  range(len(time_inter))]
-            reduced_array = [sublist[0] for sublist in element["data_vars"][key]["data"]]
+            if key != "eastward_wind" and key != "northward_wind":
+                reduced_array = [sublist[0] for sublist in element["data_vars"][key]["data"]]
+            else:
+                reduced_array = element["data_vars"][key]["data"]
             cop_weather[key] = np.array(reduced_array)
             cop_weather[key + "_mask"] = np.isnan(cop_weather[key]).astype(float)
+            mask_res = res.copy()
             latlon_interpolation(time, cop_weather, key, lat_grid, lon_grid, lat_inter_grid, lon_inter_grid, res)
             latlon_interpolation(time, cop_weather, key + "_mask", lat_grid, lon_grid, lat_inter_grid, lon_inter_grid,
-                                 res)
+                                 mask_res)
             time_interpolation(time, lat_inter, lon_inter, res, key, time_inter, cop_weather)
-            time_interpolation(time, lat_inter, lon_inter, res, key + "_mask", time_inter, cop_weather)
+            time_interpolation(time, lat_inter, lon_inter, mask_res, key + "_mask", time_inter, cop_weather)
 
     keys_to_iter = deepcopy(list(cop_weather.keys()))
     apply_nan_masc(keys_to_iter, cop_weather, land_treshhold)
@@ -189,20 +193,36 @@ def interpolate_for_copernicus(weather, result, request, requested_time):
                 weather[key] = cop_weather[key]
     try:
         curr_request = request.parse_for_copernicus_currents()["request"]
-    except:
-        return weather
-    for e in curr_request:
-        if e == "sea_current_direction":
-            key_weather = np.arctan2(weather["uo"], weather["vo"]) * (180 / np.pi) + 180
-            key_weather = np.mod(key_weather, 360)
-            weather[e] = [[[float(value) for value in row] for row in slice_] for slice_ in key_weather]
-        elif e == "sea_current_speed":
-            wind_speed = np.sqrt(np.power(weather["uo"], 2) + np.power(weather["vo"], 2))
-            weather[e] = [[[float(value) for value in row] for row in slice_] for slice_ in wind_speed]
-    if "uo" in weather:
-        del weather["uo"]
-        del weather["vo"]
+        for e in curr_request:
+            if e == "sea_current_direction":
+                key_weather = np.arctan2(weather["uo"], weather["vo"]) * (180 / np.pi) + 180
+                key_weather = np.mod(key_weather, 360)
+                weather[e] = [[[float(value) for value in row] for row in slice_] for slice_ in key_weather]
+            elif e == "sea_current_speed":
+                sea_current_speed = np.sqrt(np.power(weather["uo"], 2) + np.power(weather["vo"], 2))
+                weather[e] = [[[float(value) for value in row] for row in slice_] for slice_ in sea_current_speed]
 
+        if "uo" in weather:
+            del weather["uo"]
+            del weather["vo"]
+    except:
+        None
+    try:
+        wind_request = request.parse_for_copernicus_wind()["request"]
+        for e in wind_request:
+            if e == "wind_direction":
+                key_weather = np.arctan2(weather["eastward_wind"], weather["northward_wind"]) * (180 / np.pi) + 180
+                key_weather = np.mod(key_weather, 360)
+                weather[e] = [[[float(value) for value in row] for row in slice_] for slice_ in key_weather]
+            elif e == "wind_speed":
+                wind_speed = np.sqrt(np.power(weather["eastward_wind"], 2) + np.power(weather["northward_wind"], 2))
+                weather[e] = [[[float(value) for value in row] for row in slice_] for slice_ in wind_speed]
+        if "eastward_wind" in weather:
+            del weather["eastward_wind"]
+            del weather["northward_wind"]
+
+    except:
+        None
     return weather
 
 

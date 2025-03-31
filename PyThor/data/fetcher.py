@@ -26,6 +26,7 @@ class Fetcher:
     def __init__(self, request):
         self.currents = None
         self.tide = None
+        self.wind = None
         if isinstance(request, dr.DataRequest):
             self.__request = request
         else:
@@ -84,8 +85,8 @@ class Fetcher:
 
     async def fetch_currents_async(self, data_request):
         time_start, time_end = data_request["time"][0].astimezone(pytz.timezone('UTC')).replace(tzinfo=None), \
-                               data_request["time"][1].astimezone(
-                                   pytz.timezone('UTC')).replace(tzinfo=None)
+            data_request["time"][1].astimezone(
+                pytz.timezone('UTC')).replace(tzinfo=None)
         time_start = time_start.replace(hour=self.curr_map_hour(data_request["time"][0].hour))
         time_end = self.curr_map_later_date(time_end)
         self.currents = copernicusmarine.open_dataset(
@@ -106,6 +107,37 @@ class Fetcher:
         data_request = self.__request.parse_for_copernicus_currents()
         self.run_currents_task(data_request)
         return self.currents
+
+    def run_wind_task(self, data_request):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(self.fetch_wind_async(data_request))
+        loop.close()
+
+    async def fetch_wind_async(self, data_request):
+        time_start, time_end = data_request["time"][0].astimezone(pytz.timezone('UTC')).replace(tzinfo=None), \
+            data_request["time"][1].astimezone(
+                pytz.timezone('UTC')).replace(tzinfo=None)
+        time_start = time_start.replace(hour=self.curr_map_hour(data_request["time"][0].hour))
+        time_end = self.curr_map_later_date(time_end)
+        self.wind = copernicusmarine.open_dataset(
+            dataset_id=data_request["dataset_id"],
+            minimum_longitude=data_request["longitude"][0],
+            maximum_longitude=data_request["longitude"][1],
+            minimum_latitude=data_request["latitude"][0],
+            maximum_latitude=data_request["latitude"][1],
+            start_datetime=time_start,
+            end_datetime=time_end,
+            variables=data_request["variables"], username=self.USERNAME, password=self.PASSWORD)
+
+    def fetch_wind_copernicus(self):
+        """
+        send request to copernicus service for wind data
+        :return: xarray dataset
+        """
+        data_request = self.__request.parse_for_copernicus_wind()
+        self.run_wind_task(data_request)
+        return self.wind
 
     def run_tide_task(self, data_request):
         loop = asyncio.new_event_loop()
@@ -178,9 +210,9 @@ class Fetcher:
             filename = "ww" + forecast_time.strftime("%Y%m%d") + forecast_hour + str(j) + ".grib2"
 
             try:
-                print(save_folder + filename)
-                urlretrieve(url, save_folder + filename)
-                wave_unproccessed = xr.load_dataset(save_folder + filename, engine='cfgrib')
+                print(save_folder / filename)
+                urlretrieve(url, save_folder / filename)
+                wave_unproccessed = xr.load_dataset(save_folder / filename, engine='cfgrib')
                 res["longitude"] = wave_unproccessed["longitude"].values.tolist()
                 res["latitude"] = wave_unproccessed["latitude"].values.tolist()
                 t = wave_unproccessed["time"].values
@@ -217,8 +249,9 @@ class Fetcher:
         waves_and_wind, tides, currents = None, None, None
         res = {}
         print("Fetching data...")
-        if len(self.__request.noaa_variables) > 0:
-            waves_and_wind = self.fetch_wave_and_wind()
+        if config.settings["noaa_active"] is True:
+            if len(self.__request.noaa_variables) > 0:
+                waves_and_wind = self.fetch_wave_and_wind()
         res["waves_and_wind"] = waves_and_wind
         res["copernicus"] = {}
         if len(self.__request.tide_variables) > 0:
@@ -227,5 +260,9 @@ class Fetcher:
         if self.__request.currents_variables != [[], []]:
             currents = self.fetch_currents().to_dict()
             res["copernicus"]["currents"] = currents
+        if self.__request.wind_variables != [[], []]:
+            wind = self.fetch_wind_copernicus()
+            wind_d = wind.to_dict()
+            res["copernicus"]["wind"] = wind_d
         print("Fetching finished")
         return res

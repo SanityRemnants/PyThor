@@ -4,3 +4,4 @@ coppernicus_acount:
 resolution: 0.15
 land_treshhold: 0.5
 clear_cache: True
+noaa_active: False

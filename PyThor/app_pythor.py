@@ -30,8 +30,8 @@ def root():
                                request.args.get('variables', "").replace(" ", "").split(","))
     file_name = str(data_request) + ".json"
     print("Checking cache folder...")
-    print(cache_folder + file_name)
-    if not os.path.isfile(cache_folder + file_name):
+    print(cache_folder / file_name)
+    if not os.path.isfile(cache_folder / file_name):
         print("Cache miss")
         time = [int(request.args.get('time_start')), int(request.args.get('time_end'))]
         if not data_request.is_valid():
@@ -40,12 +40,12 @@ def root():
 
         res = interpolate(result, data_request, time)
 
-        with open(cache_folder + file_name, 'w') as f:
+        with open(cache_folder / file_name, 'w') as f:
             json.dump(res, f)
         return res
     else:
         print("Cache hit")
-        with open(cache_folder + file_name, 'r') as f:
+        with open(cache_folder / file_name, 'r') as f:
             return json.load(f)
 
 

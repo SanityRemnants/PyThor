@@ -70,7 +70,7 @@ class DataRequest:
                                             datetime.fromtimestamp(int(time_end)))
         except:
             self.__time = None
-        self.__time_interval = float(interval)
+        self.__time_interval = float(interval) if float(interval) > 0 else 60
         self.noaa_variables, self.currents_variables, self.tide_variables, self.wave_variables, self.wind_variables = self.__parse_variables(
             variables)
 
@@ -150,7 +150,7 @@ class DataRequest:
         }
         return result
 
-    def parse_for_copernicus_wind(self, time_end):
+    def parse_for_copernicus_wind(self, time_end=None):
         """
         parse API request into copernicus request dictionary for wind variables up to a specified point in time
         :return: a dict compatible with copernicus marine API
@@ -159,8 +159,9 @@ class DataRequest:
             "dataset_id": "cmems_obs-wind_glo_phy_nrt_l4_0.125deg_PT1H",
             "longitude": [self.__longitude.start, self.__longitude.end],
             "latitude": [self.__latitude.start, self.__latitude.end],
-            "time": [self.__time.start, time_end],
-            "variables": self.wind_variables
+            "time": [self.__time.start, time_end if time_end is not None else self.__time.end],
+            "variables": self.wind_variables[0],
+            "request": self.wind_variables[1]
         }
         return result
 

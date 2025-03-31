@@ -17,3 +17,6 @@ land_treshhold:
 clear_cache:
   required: True
   type: boolean
+noaa_active:
+  required: True
+  type: boolean
