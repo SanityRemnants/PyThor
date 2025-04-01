@@ -1,7 +1,7 @@
 ## What is PyThor?
 PyThor is a library designed to allow the user to access marine data and weather forecasts provided by National Oceanic and Atmospheric Administration and Copernicus Marine Service.
 
-# Due to regular gaps in the data provided by NOAA causing errors in the application, downloading data from the service has been temporarily disabled!
+## $${\color{red}Due to regular gaps in the data provided by NOAA causing errors in the application, downloading data from the service has been temporarily disabled!}$$
 As a result, access to wave data and wind forecasts does not work (archived wind data provided by Copernicus works). 
 It is possible to manually enable access to noaa data by changing the config.yaml file:
 ```
